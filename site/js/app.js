@@ -717,6 +717,393 @@
     return sec;
   };
 
+  /* ---------- aplicar o estudo numa música ---------- */
+
+  var C = global.Cifras, A = global.Aplicar;
+
+  var musica = {
+    titulo: null, artista: null, fonte: null,
+    mapa: null, original: null, tom: null,
+    conceito: null, aviso: null
+  };
+
+  function mod12(n) { return ((n % 12) + 12) % 12; }
+
+  function tomDaMusica() { return musica.tom || musica.original; }
+
+  function semitonsMusica() {
+    if (!musica.original) return 0;
+    var d = mod12(tomDaMusica().pc - musica.original.pc);
+    return d > 6 ? d - 12 : d;
+  }
+
+  /** Recalcula a análise e redesenha só o miolo da seção. */
+  function atualizarMusica(painel) {
+    painel.innerHTML = '';
+    if (!musica.mapa) return;
+
+    var tom = tomDaMusica();
+    var bemol = A.usaBemol(tom);
+    var ctx = A.analisar(musica.mapa, semitonsMusica(), bemol, musica.original);
+    var marcas = musica.conceito ? (A.marcar(ctx, [musica.conceito])[musica.conceito] || []) : [];
+
+    var porAcorde = {};
+    marcas.forEach(function (m) { if (!porAcorde[m.i]) porAcorde[m.i] = m; });
+
+    painel.appendChild(cabecalhoMusica(ctx, painel));
+    painel.appendChild(escolherConceito(painel, ctx));
+    if (musica.conceito) painel.appendChild(resumoConceito(ctx, marcas));
+    painel.appendChild(desenharCifra(ctx, porAcorde));
+  }
+
+  function cabecalhoMusica(ctx, painel) {
+    var cab = criar('div', 'musica-cabecalho');
+
+    var id = criar('div', 'musica-id');
+    id.appendChild(criar('h3', 'musica-nome', musica.titulo || 'Cifra colada'));
+    if (musica.artista) id.appendChild(criar('span', 'musica-artista', musica.artista));
+    cab.appendChild(id);
+
+    var acoes = criar('div', 'musica-acoes');
+    var trocar = criar('button', 'musica-trocar', 'trocar de música');
+    trocar.type = 'button';
+    trocar.addEventListener('click', function () {
+      musica.mapa = null;
+      musica.conceito = null;
+      var raiz = painel.parentNode;
+      raiz.innerHTML = '';
+      raiz.appendChild(corpoMusica(raiz));
+    });
+    acoes.appendChild(trocar);
+    if (musica.fonte) {
+      var f = criar('a', 'musica-fonte', 'ver no Cifra Club');
+      f.href = musica.fonte;
+      f.target = '_blank';
+      f.rel = 'noopener';
+      acoes.appendChild(f);
+    }
+    cab.appendChild(acoes);
+
+    var linhaTom = criar('div', 'musica-tons');
+    linhaTom.appendChild(criar('span', 'musica-rotulo', 'Tom da música'));
+    var tons = criar('div', 'musica-seletor');
+    M.TONS.forEach(function (t) {
+      var alvo = { pc: t.pc, menor: tomDaMusica().menor };
+      var atual = t.pc === tomDaMusica().pc;
+      var b = criar('button', 'tom' + (atual ? ' atual' : ''), A.nomeDoTom(alvo, A.usaBemol(alvo)));
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        musica.tom = alvo;
+        atualizarMusica(painel);
+        M.ativarAudio();
+      });
+      tons.appendChild(b);
+    });
+    linhaTom.appendChild(tons);
+    if (musica.original) {
+      linhaTom.appendChild(criar('span', 'musica-original',
+        'original ' + A.nomeDoTom(musica.original, A.usaBemol(musica.original))));
+    }
+    cab.appendChild(linhaTom);
+    return cab;
+  }
+
+  function escolherConceito(painel, ctx) {
+    var caixa = criar('div', 'conceito-escolha');
+    caixa.appendChild(criar('span', 'musica-rotulo', 'O que estudar nela'));
+    var lista = criar('div', 'conceito-chips');
+
+    var permitidos = (aulaCorrente && aulaCorrente.aplicar) || [];
+    permitidos.forEach(function (id) {
+      var c = A.conceito(id);
+      if (!c) return;
+      var quantas = (A.marcar(ctx, [id])[id] || []).length;
+      var b = criar('button', 'conceito-chip' + (musica.conceito === id ? ' ativo' : '') + (quantas ? '' : ' vazio'));
+      b.type = 'button';
+      b.innerHTML = c.nome + (quantas ? '<span class="conceito-n">' + quantas + '</span>' : '');
+      b.title = c.resumo + (quantas ? '' : ' (não aparece nesta música)');
+      b.addEventListener('click', function () {
+        musica.conceito = musica.conceito === id ? null : id;
+        atualizarMusica(painel);
+      });
+      lista.appendChild(b);
+    });
+    caixa.appendChild(lista);
+    return caixa;
+  }
+
+  function resumoConceito(ctx, marcas) {
+    var c = A.conceito(musica.conceito);
+    var caixa = criar('div', 'conceito-resumo');
+
+    var topo = criar('div', 'resumo-topo');
+    topo.appendChild(criar('h4', 'resumo-nome', c.nome));
+    if (aulaCorrente && aulaCorrente.video && c.t !== undefined) {
+      var lv = criar('a', 'ver-video', '<span class="ico">▶</span>rever na aula <span class="tempo">' + relogio(c.t) + '</span>');
+      lv.href = 'https://www.youtube.com/watch?v=' + aulaCorrente.video.id + '&t=' + c.t + 's';
+      lv.rel = 'noopener';
+      aoClicarVideo(lv, aulaCorrente.video.id, c.t, c.nome + ' · ' + relogio(c.t));
+      topo.appendChild(lv);
+    }
+    caixa.appendChild(topo);
+    caixa.appendChild(criar('p', 'resumo-texto', c.resumo));
+
+    if (!marcas.length) {
+      caixa.appendChild(criar('p', 'resumo-vazio', 'Esta música não dá brecha para esse conceito. Escolha outro, ou troque o tom e veja se muda.'));
+      return caixa;
+    }
+
+    // uma linha por sugestão diferente, com quantas vezes ela cabe
+    var vistas = {}, ordem = [];
+    marcas.forEach(function (m) {
+      var k = m.sugestao || m.titulo;
+      if (!vistas[k]) { vistas[k] = { m: m, n: 0 }; ordem.push(k); }
+      vistas[k].n++;
+    });
+
+    var ul = criar('ul', 'resumo-lista');
+    ordem.forEach(function (k) {
+      var v = vistas[k];
+      var acorde = ctx.itens.filter(function (it) { return it.i === v.m.i; })[0];
+      var li = criar('li');
+      li.title = v.m.texto;
+      li.appendChild(criar('span', 'resumo-onde', acorde ? acorde.cifra : ''));
+      var txt = criar('span', 'resumo-como');
+      txt.innerHTML = '<b>' + v.m.titulo + '</b><span class="resumo-sug">' + v.m.sugestao + '</span>';
+      li.appendChild(txt);
+      if (v.n > 1) li.appendChild(criar('span', 'resumo-vezes', v.n + '×'));
+      ul.appendChild(li);
+    });
+    caixa.appendChild(ul);
+    return caixa;
+  }
+
+  /* ---------- desenho da cifra ---------- */
+
+  function chipDaCifra(texto, item) {
+    var b = criar('button', 'cifra-chip');
+    b.type = 'button';
+    b.textContent = texto;
+    b.addEventListener('click', function () { tocarItem(item); });
+    espiar(b, item);
+    return b;
+  }
+
+  function desenharCifra(ctx, porAcorde) {
+    var caixa = criar('div', 'cifra-mapa');
+    var porI = {};
+    ctx.itens.forEach(function (it) { porI[it.i] = it; });
+    // a receita se repete acorde após acorde: escreve na primeira vez, depois só marca
+    var jaDito = {};
+
+    ctx.mapa.secoes.forEach(function (s) {
+      var bloco = criar('section', 'cifra-secao');
+
+      var cab = criar('header', 'cifra-secao-topo');
+      if (s.nome) cab.appendChild(criar('span', 'cifra-secao-nome', s.nome));
+      var lista = [];
+      s.linhas.forEach(function (l) {
+        (l.cifras || []).forEach(function (c) { if (porI[c.i]) lista.push(porI[c.i]); });
+      });
+      if (lista.length) {
+        var play = criar('button', 'mini-play', '▶');
+        play.type = 'button';
+        play.setAttribute('aria-label', 'Tocar esta parte');
+        play.addEventListener('click', function () {
+          // condução de vozes: a mão não pula de oitava a cada acorde
+          var vozes = M.vozesLigadas(lista.map(function (it) { return it.cifra; }), 0);
+          M.tocarSequencia(vozes.map(function (v) {
+            return v.esquerda.concat(v.direita);
+          }), { bpm: 54 });
+        });
+        cab.appendChild(play);
+      }
+      bloco.appendChild(cab);
+
+      s.linhas.forEach(function (l) {
+        if (l.tipo === 'espaco') { bloco.appendChild(criar('div', 'cifra-espaco')); return; }
+
+        if (l.tipo === 'letra') {
+          bloco.appendChild(criar('div', 'cifra-letra', escapar(l.letra)));
+          return;
+        }
+
+        var linha = criar('div', 'cifra-linha');
+        var nivel = criar('div', 'cifra-acordes');
+        var temSugestao = false;
+
+        l.cifras.forEach(function (c) {
+          var it = porI[c.i];
+          if (!it) return;
+          var marca = porAcorde[c.i];
+          var caixinha = criar('span', 'cifra-pos' + (marca ? ' marcado' : ''));
+          caixinha.style.left = c.col + 'ch';
+          caixinha.appendChild(chipDaCifra(it.cifra, { cifra: it.cifra }));
+          if (marca) {
+            caixinha.title = marca.titulo + ': ' + marca.texto;
+            var chave = marca.sugestao || marca.titulo;
+            if (!jaDito[chave]) {
+              jaDito[chave] = true;
+              temSugestao = true;
+              var s2 = criar('span', 'cifra-sugestao');
+              s2.textContent = marca.entre ? '↳ ' + marca.sugestao : marca.sugestao;
+              caixinha.appendChild(s2);
+            } else {
+              caixinha.classList.add('repetido');
+            }
+          }
+          nivel.appendChild(caixinha);
+        });
+
+        if (temSugestao) nivel.classList.add('com-sugestao');
+        linha.appendChild(nivel);
+        if (l.letra) linha.appendChild(criar('div', 'cifra-letra', escapar(l.letra)));
+        else if (l.texto) linha.appendChild(criar('div', 'cifra-letra', escapar(l.texto)));
+        bloco.appendChild(linha);
+      });
+
+      caixa.appendChild(bloco);
+    });
+    return caixa;
+  }
+
+  function escapar(t) {
+    return String(t === undefined || t === null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /* ---------- busca e importação ---------- */
+
+  function corpoMusica(raiz) {
+    var painel = criar('div', 'musica-painel');
+
+    if (musica.mapa) {
+      atualizarMusica(painel);
+      return painel;
+    }
+
+    var procura = criar('div', 'musica-procura');
+    var campo = criar('input', 'musica-campo');
+    campo.type = 'search';
+    campo.placeholder = 'Buscar qualquer música: nome ou artista';
+    campo.setAttribute('aria-label', 'Buscar música');
+    procura.appendChild(campo);
+
+    var estado = criar('p', 'musica-estado');
+    procura.appendChild(estado);
+
+    var achados = criar('div', 'musica-achados');
+    procura.appendChild(achados);
+
+    var timer = null, pedido = 0;
+
+    function buscar() {
+      var termo = campo.value.trim();
+      achados.innerHTML = '';
+      if (termo.length < 2) { estado.textContent = ''; return; }
+      estado.textContent = 'procurando…';
+      var meu = ++pedido;
+      C.buscar(termo).then(function (lista) {
+        if (meu !== pedido) return;
+        estado.textContent = lista.length ? '' : 'nada encontrado com esse nome';
+        lista.forEach(function (r) {
+          var b = criar('button', 'musica-achado');
+          b.type = 'button';
+          b.innerHTML = '<span class="achado-titulo">' + escapar(r.titulo) + '</span>' +
+                        '<span class="achado-artista">' + escapar(r.artista) + '</span>';
+          b.addEventListener('click', function () { abrirMusica(r, raiz, estado); });
+          achados.appendChild(b);
+        });
+      }).catch(function () {
+        if (meu !== pedido) return;
+        estado.textContent = 'a busca não respondeu. Cole a cifra abaixo que funciona igual.';
+      });
+    }
+
+    campo.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(buscar, 260);
+    });
+
+    painel.appendChild(procura);
+    painel.appendChild(areaColar(raiz));
+    setTimeout(function () { campo.focus(); }, 0);
+    return painel;
+  }
+
+  function areaColar(raiz) {
+    var caixa = criar('details', 'musica-colar');
+    var resumo = criar('summary', '', 'ou cole a cifra você mesmo');
+    caixa.appendChild(resumo);
+    var p = criar('p', 'colar-dica', 'Copie a cifra de onde quiser e cole aqui. O alinhamento dos acordes sobre a letra é preservado.');
+    caixa.appendChild(p);
+    var ta = criar('textarea', 'colar-campo');
+    ta.rows = 8;
+    ta.placeholder = '[Intro]\nC  G  Am  F\n\nC              G\n  letra da música aqui';
+    caixa.appendChild(ta);
+    var erro = criar('p', 'colar-erro');
+    caixa.appendChild(erro);
+
+    var b = criar('button', 'btn-tocar', 'Usar esta cifra');
+    b.type = 'button';
+    b.addEventListener('click', function () {
+      var txt = ta.value.trim();
+      erro.textContent = '';
+      if (!txt) return;
+      var mapa = C.analisarTexto(txt);
+      if (!mapa.cifras.length) {
+        erro.textContent = 'Não achei acordes nesse texto. As cifras precisam estar em linhas próprias, acima da letra.';
+        return;
+      }
+      musica.titulo = 'Cifra colada';
+      musica.artista = null;
+      musica.fonte = null;
+      musica.mapa = mapa;
+      musica.original = A.descobrirTom(mapa.cifras.map(function (c) { return M.lerCifra(c.cifra); })
+        .filter(Boolean));
+      musica.tom = null;
+      musica.conceito = null;
+      raiz.innerHTML = '';
+      raiz.appendChild(corpoMusica(raiz));
+    });
+    caixa.appendChild(b);
+    return caixa;
+  }
+
+  function abrirMusica(r, raiz, estado) {
+    estado.textContent = 'trazendo a cifra de "' + r.titulo + '"…';
+    C.importar(r.dns, r.slug).then(function (d) {
+      if (!d.mapa.cifras.length) throw new Error('cifra vazia');
+      musica.titulo = d.titulo || r.titulo;
+      musica.artista = r.artista;
+      musica.fonte = d.fonte;
+      musica.mapa = d.mapa;
+      musica.original = A.lerTom(d.tomOriginal) ||
+        A.descobrirTom(d.mapa.cifras.map(function (c) { return M.lerCifra(c.cifra); }).filter(Boolean));
+      musica.tom = null;
+      musica.conceito = null;
+      raiz.innerHTML = '';
+      raiz.appendChild(corpoMusica(raiz));
+    }).catch(function () {
+      estado.innerHTML = 'não consegui trazer essa cifra automaticamente. ' +
+        'Abra <a href="https://www.cifraclub.com.br/' + r.dns + '/' + r.slug + '/" target="_blank" rel="noopener">a página dela</a>, ' +
+        'copie e use o campo de colar abaixo.';
+    });
+  }
+
+  function secaoMusica() {
+    var sec = criar('section', 'bloco bloco-musica');
+    var cab = criar('header', 'musica-topo');
+    cab.appendChild(criar('h2', 'titulo-bloco', 'Aplicar numa música'));
+    cab.appendChild(criar('p', 'texto-bloco',
+      'Busque qualquer música, escolha o que estudar nela e o caderno marca, acorde por acorde, onde o conceito cabe. O tom é seu.'));
+    sec.appendChild(cab);
+    var raiz = criar('div', 'musica-raiz');
+    raiz.appendChild(corpoMusica(raiz));
+    sec.appendChild(raiz);
+    return sec;
+  }
+
   /* ---------- páginas ---------- */
 
   function renderAula(aula) {
@@ -769,6 +1156,21 @@
       }
       main.appendChild(sec);
     });
+
+    if (aula.aplicar && aula.aplicar.length && C && A) {
+      var sm = secaoMusica();
+      sm.id = 'aplicar';
+      var am = criar('a', 'indice-item', 'Aplicar numa música');
+      am.href = '#' + aula.id;
+      am.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        sm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      indice.appendChild(am);
+      temIndice = true;
+      main.appendChild(sm);
+    }
+
     if (temIndice) main.insertBefore(indice, main.children[1] || null);
 
     main.scrollTop = 0;

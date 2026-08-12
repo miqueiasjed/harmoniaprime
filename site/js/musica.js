@@ -293,65 +293,225 @@
     return { esquerda: esq, direita: dir };
   }
 
-  /* ---------- Áudio ---------- */
+  /* ---------- Condução de vozes ---------- */
+
+  /** A oitava de `pc` que cai mais perto de `referencia`, presa na faixa. */
+  function maisPerto(pc, referencia, minimo, maximo) {
+    var m = referencia - (((referencia - pc) % 12) + 12) % 12;
+    if (referencia - m > 6) m += 12;
+    while (m < minimo) m += 12;
+    while (m > maximo) m -= 12;
+    return m;
+  }
+
+  /**
+   * Encadeia uma sequência de cifras conduzindo as vozes: cada acorde
+   * escolhe a oitava que menos afasta a mão do acorde anterior. É o que
+   * separa uma progressão tocada de blocos pulando de oitava.
+   */
+  function vozesLigadas(cifras, semitons) {
+    semitons = semitons || 0;
+    var centro = 64, refBaixo = 43;
+
+    return cifras.map(function (cifra) {
+      var a = lerCifra(typeof cifra === 'string' ? cifra : cifra.cifra);
+      if (!a) return { esquerda: [], direita: [] };
+
+      var pcBaixo = ((a.baixo === null || a.baixo === undefined) ? a.raiz : a.baixo) + semitons;
+      var baixo = maisPerto(((pcBaixo % 12) + 12) % 12, refBaixo, 33, 52);
+      refBaixo = baixo;
+
+      var pcs = [];
+      a.intervalos.forEach(function (i) {
+        var pc = (((a.raiz + i + semitons) % 12) + 12) % 12;
+        if (pcs.indexOf(pc) === -1) pcs.push(pc);
+      });
+
+      var notas = pcs.map(function (pc) { return maisPerto(pc, centro, 55, 79); });
+      notas.sort(function (x, y) { return x - y; });
+      for (var k = 1; k < notas.length; k++) {
+        if (notas[k] <= notas[k - 1]) notas[k] = notas[k - 1] + 12;
+      }
+      centro = Math.round(notas.reduce(function (s, n) { return s + n; }, 0) / notas.length);
+
+      return { esquerda: [baixo], direita: notas };
+    });
+  }
+
+  /* ---------- Áudio ----------
+     Piano somado parcial a parcial. O que tira o som de teclado de
+     brinquedo é a corda ser rígida: os harmônicos não caem em múltiplos
+     exatos, ficam progressivamente altos. Somado a isso, cada parcial
+     morre no seu tempo (agudo primeiro), o martelo faz barulho ao bater
+     e o tampo devolve uma cauda curta.
+     ----------------------------------------------------------------- */
 
   var ctx = null;
-  var master = null;
+  var master = null, seco = null, molhado = null, tampo = null;
+
+  /** Resposta ao impulso curta, no lugar de um arquivo de reverb. */
+  function respostaDoTampo(c) {
+    var dur = 1.5, n = Math.floor(c.sampleRate * dur);
+    var buf = c.createBuffer(2, n, c.sampleRate);
+    for (var canal = 0; canal < 2; canal++) {
+      var d = buf.getChannelData(canal);
+      for (var i = 0; i < n; i++) {
+        var t = i / n;
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.8) * (1 - t * 0.2);
+      }
+    }
+    return buf;
+  }
+
+  /** Saturação macia no lugar do corte quadrado do clipping. */
+  function curvaLimite() {
+    var n = 2048, curva = new Float32Array(n);
+    for (var i = 0; i < n; i++) {
+      var x = (i / (n - 1)) * 2 - 1;
+      curva[i] = Math.tanh(x);      // ganho 1 no sinal baixo, dobra só no pico
+    }
+    return curva;
+  }
 
   function audio() {
     if (!ctx) {
       var AC = global.AudioContext || global.webkitAudioContext;
       if (!AC) return null;
       ctx = new AC();
+
+      // um compressor suave segura o acorde cheio sem estourar
+      var freio = ctx.createDynamicsCompressor();
+      freio.threshold.value = -16;
+      freio.knee.value = 26;
+      freio.ratio.value = 3.2;
+      freio.attack.value = 0.006;
+      freio.release.value = 0.22;
+
+      // rede de segurança: acorde de seis notas não passa de 0 dB
+      var limite = ctx.createWaveShaper();
+      limite.curve = curvaLimite();
+
       master = ctx.createGain();
-      master.gain.value = 0.9;
-      // um leve "corpo" para não soar tão seco
-      master.connect(ctx.destination);
+      master.gain.value = 0.5;
+
+      var brilhoGeral = ctx.createBiquadFilter();
+      brilhoGeral.type = 'highshelf';
+      brilhoGeral.frequency.value = 5200;
+      brilhoGeral.gain.value = -3.5;         // tira o vidro do agudo
+
+      seco = ctx.createGain();
+      seco.gain.value = 1;
+
+      tampo = ctx.createConvolver();
+      tampo.buffer = respostaDoTampo(ctx);
+      molhado = ctx.createGain();
+      molhado.gain.value = 0.19;
+
+      seco.connect(brilhoGeral);
+      seco.connect(tampo);
+      tampo.connect(molhado);
+      molhado.connect(brilhoGeral);
+      brilhoGeral.connect(master);
+      master.connect(freio);
+      freio.connect(limite);
+      limite.connect(ctx.destination);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
 
-  var PARCIAIS = [
-    { mult: 1, ganho: 1.00, tipo: 'triangle' },
-    { mult: 2, ganho: 0.32, tipo: 'sine' },
-    { mult: 3, ganho: 0.14, tipo: 'sine' },
-    { mult: 4, ganho: 0.07, tipo: 'sine' }
-  ];
+  /** Barulho do martelo na corda: 25 ms de ruído filtrado. */
+  function martelo(c, quando, f0, volume, destino) {
+    var n = Math.floor(c.sampleRate * 0.025);
+    var buf = c.createBuffer(1, n, c.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2);
 
+    var src = c.createBufferSource();
+    src.buffer = buf;
+    var bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = Math.min(4800, Math.max(700, f0 * 4.5));
+    bp.Q.value = 0.8;
+    var g = c.createGain();
+    g.gain.value = volume * 0.28;
+
+    src.connect(bp); bp.connect(g); g.connect(destino);
+    src.start(quando);
+    src.stop(quando + 0.05);
+  }
+
+  /**
+   * Uma nota. duracao é quando o abafador desce, não quando o som acaba:
+   * o decaimento natural pode terminar antes.
+   */
   function tocarNota(midi, quando, duracao, volume) {
     var c = audio();
     if (!c) return;
     quando = quando === undefined ? c.currentTime : quando;
-    duracao = duracao || 1.6;
-    volume = volume === undefined ? 0.22 : volume;
+    duracao = duracao || 1.8;
+    volume = volume === undefined ? 0.2 : volume;
 
-    var f = freq(midi);
-    var env = c.createGain();
-    env.gain.setValueAtTime(0.0001, quando);
-    env.gain.exponentialRampToValueAtTime(volume, quando + 0.012);
-    env.gain.exponentialRampToValueAtTime(volume * 0.32, quando + 0.35);
-    env.gain.exponentialRampToValueAtTime(0.0001, quando + duracao);
+    var f0 = freq(midi);
+    var forca = Math.max(0.25, Math.min(1.4, volume / 0.2));
 
-    var filtro = c.createBiquadFilter();
-    filtro.type = 'lowpass';
-    filtro.frequency.setValueAtTime(Math.min(9000, f * 8 + 900), quando);
-    filtro.Q.value = 0.4;
+    var voz = c.createGain();
+    voz.gain.value = 1;
+    voz.connect(seco);
 
-    env.connect(filtro);
-    filtro.connect(master);
+    martelo(c, quando, f0, volume, voz);
 
-    PARCIAIS.forEach(function (p) {
-      var osc = c.createOscillator();
-      osc.type = p.tipo;
-      osc.frequency.setValueAtTime(f * p.mult, quando);
+    // grave sustenta muito mais que agudo
+    var sustento = 1.1 + 11 * Math.pow(2, -(midi - 21) / 19);
+    // rigidez da corda: quanto mais agudo, mais os parciais sobem
+    var rigidez = 0.00013 + Math.max(0, midi - 60) * 0.000022;
+    var quantos = Math.max(3, Math.min(15, Math.round(7600 / f0)));
+    var fim = quando;
+
+    for (var n = 1; n <= quantos; n++) {
+      var f = f0 * n * Math.sqrt(1 + rigidez * n * n);
+      if (f > 16500) break;
+
+      // parcial agudo entra mais forte no toque firme e some antes
+      var amp = volume * Math.pow(n, -1.32) * Math.pow(forca, 0.35 + n * 0.05);
+      if (amp < 0.00035) break;
+      var morte = Math.min(sustento / (1 + 0.62 * (n - 1)) + 0.12, duracao + 2.4);
+      var corte = quando + Math.min(morte, duracao + 0.22);
+      if (corte > fim) fim = corte;
+
       var g = c.createGain();
-      g.gain.value = p.ganho;
+      g.gain.setValueAtTime(0.00008, quando);
+      g.gain.exponentialRampToValueAtTime(amp, quando + 0.005 + n * 0.0004);
+      g.gain.exponentialRampToValueAtTime(amp * 0.0009, quando + morte);
+      // abafador ao soltar a tecla
+      g.gain.setTargetAtTime(0.00002, quando + duracao, 0.07);
+
+      var osc = c.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = f;
       osc.connect(g);
-      g.connect(env);
+      g.connect(voz);
       osc.start(quando);
-      osc.stop(quando + duracao + 0.1);
-    });
+      osc.stop(corte + 0.05);
+
+      // segunda corda só nos dois parciais mais audíveis: dá o batimento vivo
+      if (n <= 2 && midi >= 36) {
+        var g2 = c.createGain();
+        g2.gain.setValueAtTime(0.00008, quando);
+        g2.gain.exponentialRampToValueAtTime(amp * 0.62, quando + 0.006);
+        g2.gain.exponentialRampToValueAtTime(amp * 0.0009, quando + morte * 0.94);
+        g2.gain.setTargetAtTime(0.00002, quando + duracao, 0.07);
+
+        var osc2 = c.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.value = f;
+        osc2.detune.value = n === 1 ? 1.1 : -1.4;      // ~1 centésimo: bate devagar
+        osc2.connect(g2);
+        g2.connect(voz);
+        osc2.start(quando);
+        osc2.stop(corte + 0.05);
+      }
+    }
   }
 
   /** Toca um conjunto de notas. modo: 'bloco' | 'arpejo' */
@@ -360,11 +520,14 @@
     var c = audio();
     if (!c) return;
     var t0 = c.currentTime + 0.02;
-    var passo = opcoes.modo === 'arpejo' ? (opcoes.passo || 0.13) : 0.012;
+    var passo = opcoes.modo === 'arpejo' ? (opcoes.passo || 0.13) : 0.009;
     var dur = opcoes.duracao || 1.8;
-    var vol = opcoes.volume === undefined ? 0.20 : opcoes.volume;
-    notas.slice().sort(function (a, b) { return a - b; }).forEach(function (m, i) {
-      tocarNota(m, t0 + i * passo, dur - i * passo * 0.25, vol);
+    var vol = opcoes.volume === undefined ? 0.2 : opcoes.volume;
+    var lista = notas.slice().sort(function (a, b) { return a - b; });
+    lista.forEach(function (m, i) {
+      // o baixo um pouco mais firme, o topo mais leve: acorde não vira parede
+      var peso = i === 0 ? 1.12 : 1 - Math.min(0.3, i * 0.06);
+      tocarNota(m, t0 + i * passo, dur - i * passo * 0.25, vol * peso);
     });
   }
 
@@ -404,6 +567,7 @@
     midiParaNota: midiParaNota,
     freq: freq,
     vozes: vozes,
+    vozesLigadas: vozesLigadas,
     tocarNota: tocarNota,
     tocarNotas: tocarNotas,
     tocarSequencia: tocarSequencia,

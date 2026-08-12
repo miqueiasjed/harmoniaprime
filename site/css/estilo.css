@@ -773,6 +773,219 @@ button { font-family: inherit; cursor: pointer; }
 }
 .vazio p { margin: 0 0 8px; max-width: 60ch; }
 
+/* ---------- aplicar numa música ---------- */
+
+.bloco-musica { border-top: 1px solid var(--linha); padding-top: 30px; }
+.musica-topo .texto-bloco { max-width: 62ch; }
+
+/* busca */
+.musica-campo {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--tinta);
+  background: var(--fundo-cartao);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 11px 14px;
+  transition: border-color .12s;
+}
+.musica-campo:focus { outline: none; border-color: var(--ouro); }
+.musica-estado { margin: 8px 2px 0; font-size: 13px; color: var(--tinta-fraca); }
+.musica-estado a { color: var(--tinta-suave); }
+
+.musica-achados {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  overflow: hidden;
+  background: var(--fundo-cartao);
+}
+.musica-achados:empty { display: none; }
+.musica-achado {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-align: left;
+  padding: 9px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--linha);
+  background: none;
+  transition: background .1s;
+}
+.musica-achado:last-child { border-bottom: 0; }
+.musica-achado:hover { background: var(--ouro-fundo); }
+.achado-titulo { font-size: 14.5px; color: var(--tinta); }
+.achado-artista { font-size: 12.5px; color: var(--tinta-fraca); }
+
+.musica-colar { margin-top: 14px; font-size: 13.5px; }
+.musica-colar summary { cursor: pointer; color: var(--tinta-suave); }
+.musica-colar summary:hover { color: var(--ouro); }
+.colar-dica { margin: 10px 0 8px; color: var(--tinta-fraca); font-size: 13px; }
+.colar-campo {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--tinta);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 10px 12px;
+  background: var(--fundo-cartao);
+  resize: vertical;
+}
+.colar-campo:focus { outline: none; border-color: var(--ouro); }
+.musica-colar .btn-tocar { margin-top: 10px; }
+.colar-erro { margin: 9px 0 0; font-size: 13px; color: #9a3b2a; }
+.colar-erro:empty { display: none; }
+
+/* cabeçalho da música escolhida */
+.musica-cabecalho { margin-bottom: 20px; }
+.musica-id { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.musica-nome { font-family: var(--serif); font-size: 22px; margin: 0; }
+.musica-artista { font-size: 13.5px; color: var(--tinta-fraca); }
+
+.musica-acoes { display: flex; gap: 14px; margin-top: 6px; }
+.musica-trocar, .musica-fonte {
+  font-size: 12.5px;
+  color: var(--tinta-fraca);
+  background: none;
+  border: 0;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.musica-trocar:hover, .musica-fonte:hover { color: var(--ouro); }
+
+.musica-rotulo {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--tinta-fraca);
+}
+.musica-tons { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.musica-seletor { display: flex; gap: 4px; flex-wrap: wrap; }
+.musica-original { font-size: 12px; color: var(--tinta-fraca); font-family: var(--mono); }
+
+/* escolha do conceito */
+.conceito-escolha { margin-bottom: 18px; }
+.conceito-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.conceito-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--tinta-suave);
+  background: var(--fundo-cartao);
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  padding: 5px 13px;
+  transition: all .12s;
+}
+.conceito-chip:hover { border-color: var(--ouro); color: var(--tinta); }
+.conceito-chip.ativo { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.conceito-chip.vazio { opacity: .45; }
+.conceito-n {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ouro);
+  background: var(--ouro-fundo);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+.conceito-chip.ativo .conceito-n { background: rgba(255, 255, 255, .16); color: var(--ouro-claro); }
+
+/* resumo do conceito ativo */
+.conceito-resumo {
+  border: 1px solid var(--ouro-claro);
+  background: var(--ouro-fundo);
+  border-radius: var(--raio);
+  padding: 15px 18px;
+  margin-bottom: 20px;
+}
+.resumo-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.resumo-nome { font-family: var(--serif); font-size: 17px; margin: 0; }
+.resumo-texto { margin: 5px 0 0; font-size: 14px; color: #5a4a1e; }
+.resumo-vazio { margin: 10px 0 0; font-size: 13.5px; color: #5a4a1e; }
+.resumo-lista { list-style: none; margin: 13px 0 0; padding: 0; display: grid; gap: 8px; }
+.resumo-lista li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 11px;
+  align-items: baseline;
+  font-size: 13.5px;
+  color: #5a4a1e;
+}
+.resumo-onde {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--tinta);
+  background: #fff;
+  border: 1px solid var(--ouro-claro);
+  border-radius: 5px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.resumo-como { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.resumo-sug { font-family: var(--mono); font-size: 12.5px; color: var(--tinta); white-space: nowrap; }
+.resumo-vezes { font-family: var(--mono); font-size: 11px; color: var(--ouro); }
+
+/* a cifra desenhada */
+.cifra-mapa {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.cifra-secao { margin-bottom: 22px; min-width: max-content; }
+.cifra-secao-topo { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
+.cifra-secao-nome {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--ouro);
+}
+.cifra-linha { position: relative; }
+.cifra-espaco { height: 11px; }
+
+.cifra-acordes { position: relative; height: 21px; }
+.cifra-acordes.com-sugestao { height: 38px; }
+.cifra-pos { position: absolute; top: 0; white-space: nowrap; transform: translateX(-4px); }
+
+.cifra-chip {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.cifra-chip:hover { background: var(--fundo-suave); }
+.cifra-pos.marcado .cifra-chip {
+  color: #8a6d10;
+  background: var(--ouro-fundo);
+  border-bottom-color: var(--ouro);
+}
+/* ocorrência seguinte da mesma receita: marca sem repetir o texto */
+.cifra-pos.repetido .cifra-chip { background: none; border-bottom-style: dotted; }
+.cifra-sugestao {
+  display: block;
+  font-size: 10.5px;
+  color: var(--ouro);
+  padding-left: 4px;
+  margin-top: 1px;
+  cursor: help;
+}
+.cifra-letra { white-space: pre; color: var(--tinta-suave); }
+
 /* ---------- vídeo em pop-up ---------- */
 
 .video-fundo {

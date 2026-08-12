@@ -8,11 +8,35 @@ Não tem build, não tem dependência, não tem servidor. É só HTML, CSS e Jav
 ```
 index.html          página única
 css/estilo.css      visual
-js/musica.js        teoria (cifras, transposição, vozes) + áudio
+js/musica.js        teoria (cifras, transposição, condução de vozes) + piano
 js/teclado.js       desenho do teclado em SVG
+js/cifras.js        busca e leitura de cifras de fora
+js/aplicar.js       análise da música e detectores de conceito
 js/app.js           montagem da página
 conteudo/aulas.js   👈 o conteúdo das aulas fica aqui
 ```
+
+---
+
+## Aplicar numa música
+
+No fim de cada aula tem a seção **Aplicar numa música**. Busque qualquer música,
+escolha um conceito da aula e o caderno marca, acorde por acorde, onde ele cabe,
+com a sugestão pronta. O tom da música é independente do tom da página.
+
+A busca usa o acervo do Cifra Club. Se a importação automática falhar, o campo
+*colar a cifra* funciona igual, com qualquer cifra de qualquer lugar.
+
+Quais conceitos aparecem em cada aula vem do campo `aplicar` da aula:
+
+```js
+aplicar: ['pedal', 'sus2', 'sus4', 'dobramento', 'inversao',
+          'conexoes', 'mesmoBaixo', 'triadeAberta', 'poliacorde']
+```
+
+Cada id é um detector em `js/aplicar.js`, com o nome, o resumo, o segundo do
+vídeo onde o assunto aparece e a regra que acha os lugares na música. Aula nova
+que ensina conceito novo ganha um detector novo ali.
 
 ---
 

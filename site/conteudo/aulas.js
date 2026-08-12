@@ -33,6 +33,8 @@ var AULAS = [
     data: '01/12',
     video: { id: 'AftVKDD9T8A' },
     resumo: 'A tríade como matéria-prima: como invertê-la, engordá-la, abri-la e empilhá-la até virar acorde de sete notas.',
+    // conceitos que o "Aplicar numa música" oferece nesta aula (ids em js/aplicar.js)
+    aplicar: ['pedal', 'sus2', 'sus4', 'dobramento', 'inversao', 'conexoes', 'mesmoBaixo', 'triadeAberta', 'poliacorde'],
     blocos: [
 
       {
