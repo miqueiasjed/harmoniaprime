@@ -893,8 +893,6 @@
     var caixa = criar('div', 'cifra-mapa');
     var porI = {};
     ctx.itens.forEach(function (it) { porI[it.i] = it; });
-    // a receita se repete acorde após acorde: escreve na primeira vez, depois só marca
-    var jaDito = {};
 
     ctx.mapa.secoes.forEach(function (s) {
       var bloco = criar('section', 'cifra-secao');
@@ -950,11 +948,8 @@
           if (marca) {
             caixinha.title = marca.titulo + ': ' + marca.texto;
             var rotulo = marca.curta || marca.sugestao;
-            var chave = marca.sugestao || marca.titulo;
             // o rótulo é menor que a cifra, daí o 0.82; some se fosse atropelar o vizinho
-            var cabe = rotulo.length * 0.82 + 0.6 <= espaco[c.i];
-            if (!jaDito[chave] && cabe) {
-              jaDito[chave] = true;
+            if (rotulo.length * 0.82 + 0.6 <= espaco[c.i]) {
               temSugestao = true;
               var s2 = criar('span', 'cifra-sugestao');
               s2.textContent = rotulo;
