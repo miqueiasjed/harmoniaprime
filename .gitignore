@@ -1,0 +1,9 @@
+# macOS / iCloud Drive
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# pacote de entrega: duplicata do que já está em site/
+harmonia-prime.zip
