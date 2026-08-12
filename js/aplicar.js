@@ -233,15 +233,17 @@
           return true;
         }).map(function (it) {
           var baixo = it.lida.baixoNome || it.lida.raizNome;
+          var doRaiz = mod12(it.baixoPc - it.lida.raiz);   // intervalo do baixo até a fundamental
           var sug;
           if (sus2NoTom(mod12(it.baixoPc - 4))) {
             // a forma da aula: sus2 uma terça maior abaixo do baixo (C2/E, F2/A, G2/B)
             sug = grafarAbaixo(ctx, baixo, 2, 4) + '2/' + baixo;
-          } else if (sus2NoTom(it.lida.raiz)) {
-            // senão, o básico do conceito: tira a terça do próprio acorde (D2, F2, G2)
+          } else if (sus2NoTom(it.lida.raiz) && (doRaiz === 0 || doRaiz === 7)) {
+            // senão, tira a terça do próprio acorde (D2, F2, G2); mas só se o baixo
+            // não for a própria terça, que continuaria soando embaixo
             sug = it.lida.raizNome + '2' + (it.lida.baixoNome ? '/' + it.lida.baixoNome : '');
           } else {
-            return null;                              // sairia do tom: melhor dica nenhuma
+            return null;                              // sairia do tom ou brigaria: dica nenhuma
           }
           return {
             i: it.i,
