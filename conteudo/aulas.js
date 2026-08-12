@@ -196,7 +196,7 @@ var AULAS = [
 
       {
         tipo: 'exercicios',
-        titulo: 'Exercícios', t: 3534,
+        titulo: 'Exercícios', t: 3534, curta: [2, 4, 8],
         texto: 'Um por tema, na ordem da aula. A rotina inteira dá <b>37 minutos</b>. Se tiver 15, faça os de número 2, 4 e 8. Use o seletor de tom lá em cima para repetir em outros tons.',
         itens: [
           {

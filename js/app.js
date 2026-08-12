@@ -53,7 +53,8 @@
   var PISO = 48, TETO = 83;   // C3 .. B5 — registro padrão de todos os teclados
 
   function vozesDe(item) {
-    var v = M.vozes(item, semitons());
+    // itens da seção de música já vêm no tom certo e ignoram o tom da página
+    var v = M.vozes(item, item.absoluto ? 0 : semitons());
     var todas = v.esquerda.concat(v.direita);
     if (!todas.length) return v;
     var desloca = 0;
@@ -114,11 +115,13 @@
     var c = caixaEspia();
     c.innerHTML = '';
     var cab = criar('div', 'espia-cabecalho');
-    cab.appendChild(criar('span', 'espia-cifra', tt(item.cifra || (item.lh + ' + ' + item.rh))));
+    var rotuloEspia = item.cifra || (item.lh + ' + ' + item.rh);
+    cab.appendChild(criar('span', 'espia-cifra', item.absoluto ? rotuloEspia : tt(rotuloEspia)));
+    var bemolEspia = item.absoluto ? !!item.bemol : tomAtual().bemol;
     var v = vozesDe(item);
     var vistos = {}, nomes = [];
     v.esquerda.concat(v.direita).forEach(function (m) {
-      var n = M.midiParaNota(m, tomAtual().bemol).replace(/\d+$/, '');
+      var n = M.midiParaNota(m, bemolEspia).replace(/\d+$/, '');
       if (!vistos[n]) { vistos[n] = true; nomes.push(n); }
     });
     cab.appendChild(criar('span', 'espia-notas', nomes.join(' · ')));
@@ -185,7 +188,7 @@
       esquerda: v.esquerda,
       direita: v.direita,
       marcadores: marc,
-      bemol: tomAtual().bemol,
+      bemol: item.absoluto ? !!item.bemol : tomAtual().bemol,
       rotulos: opcoes.rotulos !== false,
       preferido: { inicio: PISO, fim: TETO }
     });
@@ -654,12 +657,160 @@
     return caixa;
   }
 
+  /* ---------- rotina de prática cronometrada ---------- */
+
+  var rotina = { timer: null, parar: null };
+
+  function hoje() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function praticaLida() {
+    try { return JSON.parse(localStorage.getItem('hp-pratica') || '{}'); } catch (e) { return {}; }
+  }
+
+  function somaPratica(segundos) {
+    try {
+      var p = praticaLida();
+      p[hoje()] = (p[hoje()] || 0) + segundos;
+      localStorage.setItem('hp-pratica', JSON.stringify(p));
+    } catch (e) { /* modo privado: segue sem registrar */ }
+  }
+
+  function resumoPratica() {
+    var p = praticaLida();
+    var dias = Object.keys(p).length;
+    if (!dias) return 'nenhuma prática registrada ainda';
+    var minHoje = Math.round((p[hoje()] || 0) / 60);
+    return 'hoje ' + minHoje + ' min · ' + dias + (dias > 1 ? ' dias' : ' dia') + ' de prática';
+  }
+
+  function minutosDe(texto) {
+    var m = String(texto || '').match(/\d+/);
+    return m ? parseInt(m[0], 10) : 4;
+  }
+
+  function montarRotina(bloco, cards) {
+    var caixa = criar('div', 'rotina');
+
+    var acoes = criar('div', 'rotina-acoes');
+    var total = bloco.itens.reduce(function (s, it) { return s + minutosDe(it.tempo); }, 0);
+    var bTudo = criar('button', 'btn-tocar', '<span class="ico">▶</span>Rotina completa · ' + total + ' min');
+    bTudo.type = 'button';
+    acoes.appendChild(bTudo);
+
+    var bCurta = null;
+    if (bloco.curta && bloco.curta.length) {
+      var minCurta = bloco.itens.filter(function (it) { return bloco.curta.indexOf(it.n) !== -1; })
+        .reduce(function (s, it) { return s + minutosDe(it.tempo); }, 0);
+      bCurta = criar('button', 'btn-tocar', '<span class="ico">▶</span>Rotina curta · ' + minCurta + ' min');
+      bCurta.type = 'button';
+      bCurta.title = 'Exercícios ' + bloco.curta.join(', ');
+      acoes.appendChild(bCurta);
+    }
+
+    var registro = criar('span', 'rotina-registro', resumoPratica());
+    acoes.appendChild(registro);
+    caixa.appendChild(acoes);
+
+    var painel = criar('div', 'rotina-painel');
+    caixa.appendChild(painel);
+
+    function pararRotina(mensagem) {
+      clearInterval(rotina.timer);
+      rotina.timer = null;
+      rotina.parar = null;
+      Object.keys(cards).forEach(function (n) { cards[n].classList.remove('atual'); });
+      painel.innerHTML = '';
+      if (mensagem) painel.appendChild(criar('p', 'rotina-fim', mensagem));
+      registro.textContent = resumoPratica();
+    }
+
+    function iniciar(nums) {
+      pararRotina();
+      M.ativarAudio();
+      var fila = bloco.itens.filter(function (it) { return !nums || nums.indexOf(it.n) !== -1; });
+      if (!fila.length) return;
+      var idx = 0, restante = 0, pausado = false;
+      rotina.parar = pararRotina;
+
+      var nome = criar('span', 'rotina-nome');
+      var visor = criar('span', 'rotina-tempo');
+      var bPausa = criar('button', 'rotina-botao', 'pausar');
+      var bPula = criar('button', 'rotina-botao', 'próximo');
+      var bFim = criar('button', 'rotina-botao', 'encerrar');
+      painel.innerHTML = '';
+      [nome, visor, bPausa, bPula, bFim].forEach(function (e) {
+        if (e.tagName === 'BUTTON') e.type = 'button';
+        painel.appendChild(e);
+      });
+
+      function mostra() {
+        visor.textContent = relogio(Math.max(0, restante));
+      }
+
+      function abre() {
+        var ex = fila[idx];
+        restante = minutosDe(ex.tempo) * 60;
+        nome.textContent = String(ex.n).padStart(2, '0') + ' · ' + ex.tema;
+        Object.keys(cards).forEach(function (n) { cards[n].classList.remove('atual'); });
+        var card = cards[ex.n];
+        if (card) {
+          card.classList.add('atual');
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // um acorde marca a troca de exercício
+        if (ex.acordes && ex.acordes.length) tocarItem({ cifra: ex.acordes[0] });
+        mostra();
+      }
+
+      function proximo() {
+        idx++;
+        if (idx >= fila.length) {
+          M.tocarSequencia([vozesDe({ cifra: 'G' }), vozesDe({ cifra: 'C' })].map(function (v) {
+            return v.esquerda.concat(v.direita);
+          }), { bpm: 66 });
+          pararRotina('Rotina concluída. Registro: ' + resumoPratica() + '.');
+          return;
+        }
+        abre();
+      }
+
+      bPausa.addEventListener('click', function () {
+        pausado = !pausado;
+        bPausa.textContent = pausado ? 'continuar' : 'pausar';
+      });
+      bPula.addEventListener('click', proximo);
+      bFim.addEventListener('click', function () { pararRotina(); });
+
+      abre();
+      rotina.timer = setInterval(function () {
+        if (pausado) return;
+        restante--;
+        somaPratica(1);
+        if (restante % 30 === 0) registro.textContent = resumoPratica();
+        if (restante <= 0) { proximo(); return; }
+        mostra();
+      }, 1000);
+    }
+
+    bTudo.addEventListener('click', function () { iniciar(null); });
+    if (bCurta) bCurta.addEventListener('click', function () { iniciar(bloco.curta); });
+
+    return caixa;
+  }
+
   render.exercicios = function (bloco) {
     var sec = criar('section', 'bloco bloco-exercicios');
     sec.appendChild(tituloBloco(bloco));
+    var cards = {};
     var lista = criar('div', 'lista-exercicios');
     bloco.itens.forEach(function (it) {
       var card = criar('article', 'card-exercicio');
+      cards[it.n] = card;
 
       var topo = criar('header', 'exercicio-topo');
       topo.appendChild(criar('span', 'exercicio-n', String(it.n).padStart(2, '0')));
@@ -682,6 +833,7 @@
       }
       lista.appendChild(card);
     });
+    sec.appendChild(montarRotina(bloco, cards));
     sec.appendChild(lista);
     return sec;
   };
@@ -724,7 +876,8 @@
   var musica = {
     titulo: null, artista: null, fonte: null,
     mapa: null, original: null, tom: null,
-    conceito: null, aviso: null
+    conceito: null, aviso: null,
+    bpm: 60, loop: false, quiz: false
   };
 
   function mod12(n) { return ((n % 12) + 12) % 12; }
@@ -740,19 +893,23 @@
   /** Recalcula a análise e redesenha só o miolo da seção. */
   function atualizarMusica(painel) {
     painel.innerHTML = '';
+    M.pararSequencia();
+    limparParte();
     if (!musica.mapa) return;
 
     var tom = tomDaMusica();
     var bemol = A.usaBemol(tom);
     var ctx = A.analisar(musica.mapa, semitonsMusica(), bemol, musica.original);
-    var marcas = musica.conceito ? (A.marcar(ctx, [musica.conceito])[musica.conceito] || []) : [];
+    // no modo pergunta a cifra fica limpa: marca na página entregaria a resposta
+    var marcas = (musica.conceito && !musica.quiz)
+      ? (A.marcar(ctx, [musica.conceito])[musica.conceito] || []) : [];
 
     var porAcorde = {};
     marcas.forEach(function (m) { if (!porAcorde[m.i]) porAcorde[m.i] = m; });
 
     painel.appendChild(cabecalhoMusica(ctx, painel));
-    painel.appendChild(escolherConceito(painel, ctx));
-    if (musica.conceito) painel.appendChild(resumoConceito(ctx, marcas));
+    if (!musica.quiz) painel.appendChild(escolherConceito(painel, ctx));
+    if (musica.conceito && !musica.quiz) painel.appendChild(resumoConceito(ctx, marcas));
     painel.appendChild(desenharCifra(ctx, porAcorde));
   }
 
@@ -805,6 +962,48 @@
         'original ' + A.nomeDoTom(musica.original, A.usaBemol(musica.original))));
     }
     cab.appendChild(linhaTom);
+
+    var treino = criar('div', 'musica-treino');
+    treino.appendChild(criar('span', 'musica-rotulo', 'Treino'));
+
+    var caixaBpm = criar('span', 'treino-bpm');
+    var menos = criar('button', 'treino-passo', '–');
+    menos.type = 'button';
+    menos.setAttribute('aria-label', 'Diminuir o andamento');
+    var visorBpm = criar('span', 'treino-visor', musica.bpm + ' bpm');
+    var mais = criar('button', 'treino-passo', '+');
+    mais.type = 'button';
+    mais.setAttribute('aria-label', 'Aumentar o andamento');
+    function ajustaBpm(d) {
+      musica.bpm = Math.max(40, Math.min(120, musica.bpm + d));
+      visorBpm.textContent = musica.bpm + ' bpm';
+    }
+    menos.addEventListener('click', function () { ajustaBpm(-6); });
+    mais.addEventListener('click', function () { ajustaBpm(6); });
+    caixaBpm.appendChild(menos);
+    caixaBpm.appendChild(visorBpm);
+    caixaBpm.appendChild(mais);
+    treino.appendChild(caixaBpm);
+
+    var repetir = criar('button', 'treino-toggle' + (musica.loop ? ' ativo' : ''), 'repetir a parte');
+    repetir.type = 'button';
+    repetir.title = 'Ao terminar a parte, o play recomeça sozinho';
+    repetir.addEventListener('click', function () {
+      musica.loop = !musica.loop;
+      repetir.classList.toggle('ativo', musica.loop);
+    });
+    treino.appendChild(repetir);
+
+    var pergunta = criar('button', 'treino-toggle' + (musica.quiz ? ' ativo' : ''), 'modo pergunta');
+    pergunta.type = 'button';
+    pergunta.title = 'Esconde as cifras e mostra só os graus. Clique num grau para revelar e tocar.';
+    pergunta.addEventListener('click', function () {
+      musica.quiz = !musica.quiz;
+      atualizarMusica(painel);
+    });
+    treino.appendChild(pergunta);
+
+    cab.appendChild(treino);
     return cab;
   }
 
@@ -847,6 +1046,10 @@
     }
     caixa.appendChild(topo);
     caixa.appendChild(criar('p', 'resumo-texto', c.resumo));
+    if (marcas.length && marcas.some(function (m) { return m.demo; })) {
+      caixa.appendChild(criar('p', 'resumo-nota',
+        'O ▶ de cada linha toca o trecho como está escrito e, em seguida, com a dica aplicada.'));
+    }
 
     if (!marcas.length) {
       caixa.appendChild(criar('p', 'resumo-vazio', 'Esta música não dá brecha para esse conceito. Escolha outro, ou troque o tom e veja se muda.'));
@@ -871,6 +1074,13 @@
       var txt = criar('span', 'resumo-como');
       txt.innerHTML = '<b>' + v.m.titulo + '</b><span class="resumo-sug">' + v.m.sugestao + '</span>';
       li.appendChild(txt);
+      if (v.m.demo) {
+        var ouvir = criar('button', 'resumo-ouvir', '▶ ouvir');
+        ouvir.type = 'button';
+        ouvir.title = 'Toca como está escrito e depois com a dica aplicada';
+        ouvir.addEventListener('click', function () { tocarDemo(v.m, ctx.bemol, ouvir); });
+        li.appendChild(ouvir);
+      }
       if (v.n > 1) li.appendChild(criar('span', 'resumo-vezes', v.n + '×'));
       ul.appendChild(li);
     });
@@ -878,24 +1088,121 @@
     return caixa;
   }
 
-  /* ---------- desenho da cifra ---------- */
+  /* ---------- ouvir a dica: antes e depois ---------- */
 
-  function chipDaCifra(texto, item) {
-    var b = criar('button', 'cifra-chip');
-    b.type = 'button';
-    b.textContent = texto;
-    b.addEventListener('click', function () { tocarItem(item); });
-    espiar(b, item);
-    return b;
+  var demoBotao = null;
+
+  function tocarDemo(marca, bemol, botao) {
+    if (!marca.demo) return;
+    if (demoBotao && demoBotao !== botao) {
+      demoBotao.classList.remove('tocando');
+      demoBotao.textContent = '▶ ouvir';
+    }
+    demoBotao = botao;
+
+    function listas(itens) {
+      return itens.map(function (it) {
+        it.absoluto = true;
+        it.bemol = bemol;
+        var v = vozesDe(it);
+        return v.esquerda.concat(v.direita);
+      });
+    }
+    // um compasso de silêncio separa o "como está" do "com a dica"
+    var seq = listas(marca.demo.antes).concat([[]]).concat(listas(marca.demo.depois));
+    var divisa = marca.demo.antes.length;
+
+    if (botao) botao.classList.add('tocando');
+    M.tocarSequencia(seq, {
+      bpm: 60,
+      aoTocar: function (i) {
+        if (botao) botao.textContent = i < divisa ? '▶ como está' : '▶ com a dica';
+      },
+      aoTerminar: function () {
+        if (botao) { botao.classList.remove('tocando'); botao.textContent = '▶ ouvir'; }
+        demoBotao = null;
+      }
+    });
   }
+
+  /* ---------- play-along: a parte inteira no seu andamento ---------- */
+
+  var parteAtiva = { play: null, chips: null };
+
+  function limparParte() {
+    if (parteAtiva.play) parteAtiva.play.classList.remove('tocando');
+    if (parteAtiva.chips) parteAtiva.chips.forEach(function (c) { c.classList.remove('tocando'); });
+    parteAtiva.play = null;
+    parteAtiva.chips = null;
+  }
+
+  function tocarParte(play, lista, chips) {
+    if (parteAtiva.play === play) {          // segundo clique no mesmo play: para
+      M.pararSequencia();
+      limparParte();
+      return;
+    }
+    M.pararSequencia();
+    limparParte();
+    parteAtiva.play = play;
+    parteAtiva.chips = chips;
+    play.classList.add('tocando');
+
+    function roda() {
+      // condução de vozes: a mão não pula de oitava a cada acorde
+      var vozes = M.vozesLigadas(lista.map(function (it) { return it.cifra; }), 0);
+      M.tocarSequencia(vozes.map(function (v) { return v.esquerda.concat(v.direita); }), {
+        bpm: musica.bpm,
+        aoTocar: function (i) {
+          chips.forEach(function (c, k) { c.classList.toggle('tocando', k === i); });
+        },
+        aoTerminar: function () {
+          if (parteAtiva.play !== play) return;
+          if (musica.loop) setTimeout(function () { if (parteAtiva.play === play) roda(); }, 350);
+          else limparParte();
+        }
+      });
+    }
+    roda();
+  }
+
+  /* ---------- desenho da cifra ---------- */
 
   function desenharCifra(ctx, porAcorde) {
     var caixa = criar('div', 'cifra-mapa');
     var porI = {};
     ctx.itens.forEach(function (it) { porI[it.i] = it; });
 
+    function chipMusica(it) {
+      var item = { cifra: it.cifra, absoluto: true, bemol: ctx.bemol };
+      var b;
+      if (musica.quiz) {
+        b = criar('button', 'cifra-chip pergunta');
+        b.type = 'button';
+        b.textContent = it.grau || '?';
+        b.title = 'Clique para revelar e tocar';
+        b.addEventListener('click', function () {
+          if (b.classList.contains('pergunta')) {
+            b.classList.remove('pergunta');
+            b.textContent = it.cifra;
+            b.title = '';
+            espiar(b, item);
+          }
+          tocarItem(item);
+        });
+      } else {
+        b = criar('button', 'cifra-chip');
+        b.type = 'button';
+        b.textContent = it.cifra;
+        b.addEventListener('click', function () { tocarItem(item); });
+        espiar(b, item);
+      }
+      return b;
+    }
+
     ctx.mapa.secoes.forEach(function (s) {
       var bloco = criar('section', 'cifra-secao');
+      var chipsDaParte = [];
 
       var cab = criar('header', 'cifra-secao-topo');
       if (s.nome) cab.appendChild(criar('span', 'cifra-secao-nome', s.nome));
@@ -906,14 +1213,8 @@
       if (lista.length) {
         var play = criar('button', 'mini-play', '▶');
         play.type = 'button';
-        play.setAttribute('aria-label', 'Tocar esta parte');
-        play.addEventListener('click', function () {
-          // condução de vozes: a mão não pula de oitava a cada acorde
-          var vozes = M.vozesLigadas(lista.map(function (it) { return it.cifra; }), 0);
-          M.tocarSequencia(vozes.map(function (v) {
-            return v.esquerda.concat(v.direita);
-          }), { bpm: 54 });
-        });
+        play.setAttribute('aria-label', 'Tocar esta parte no andamento do treino');
+        play.addEventListener('click', function () { tocarParte(play, lista, chipsDaParte); });
         cab.appendChild(play);
       }
       bloco.appendChild(cab);
@@ -944,7 +1245,9 @@
           var marca = porAcorde[c.i];
           var caixinha = criar('span', 'cifra-pos' + (marca ? ' marcado' : ''));
           caixinha.style.left = c.col + 'ch';
-          caixinha.appendChild(chipDaCifra(it.cifra, { cifra: it.cifra }));
+          var chip = chipMusica(it);
+          chipsDaParte.push(chip);
+          caixinha.appendChild(chip);
           if (marca) {
             caixinha.title = marca.titulo + ': ' + marca.texto;
             var rotulo = marca.curta || marca.sugestao;
@@ -1114,8 +1417,10 @@
 
   function renderAula(aula) {
     var main = $('#conteudo');
+    if (rotina.parar) rotina.parar();
     main.innerHTML = '';
     M.pararSequencia();
+    limparParte();
     fecharEspia();
     fecharVideo();
 

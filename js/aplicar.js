@@ -196,15 +196,20 @@
           if (grupo.length < 2) return;
           var cabe = grupo.every(function (it) { return it.pcs.indexOf(ctx.tom.pc) !== -1; });
           if (!cabe) return;
+          var subs = grupo.map(function (it) {
+            return it.lida.raiz === ctx.tom.pc ? it.cifra : it.cifra.split('/')[0] + '/' + nome(ctx, ctx.tom.pc);
+          });
           marcas.push({
             i: grupo[0].i,
             titulo: 'Segura o baixo aqui',
             texto: 'Todos os acordes desta parte têm a tônica dentro. Crave ' + nome(ctx, ctx.tom.pc) +
                    ' no baixo e deixe só a direita mudar.',
-            sugestao: grupo.map(function (it) {
-              return it.lida.raiz === ctx.tom.pc ? it.cifra : it.cifra.split('/')[0] + '/' + nome(ctx, ctx.tom.pc);
-            }).slice(0, 4).join('  '),
-            curta: '/' + nome(ctx, ctx.tom.pc)
+            sugestao: subs.slice(0, 4).join('  '),
+            curta: '/' + nome(ctx, ctx.tom.pc),
+            demo: {
+              antes: grupo.slice(0, 4).map(function (it) { return { cifra: it.cifra }; }),
+              depois: subs.slice(0, 4).map(function (c) { return { cifra: c }; })
+            }
           });
         });
         return marcas;
@@ -224,12 +229,17 @@
           return true;
         }).map(function (it) {
           var baixo = it.lida.baixoNome || it.lida.raizNome;
+          var sug = grafarAbaixo(ctx, baixo, 2, 4) + '2/' + baixo;
           return {
             i: it.i,
             titulo: 'Cabe sus2',
             texto: 'Acorde de passagem: sem a terça ele para de brigar com a melodia e não fecha a frase.',
-            sugestao: grafarAbaixo(ctx, baixo, 2, 4) + '2/' + baixo,
-            curta: grafarAbaixo(ctx, baixo, 2, 4) + '2'
+            sugestao: sug,
+            curta: grafarAbaixo(ctx, baixo, 2, 4) + '2',
+            demo: {
+              antes: [{ cifra: it.cifra }, { cifra: it.proximo.cifra }],
+              depois: [{ cifra: sug }, { cifra: it.proximo.cifra }]
+            }
           };
         });
       }
@@ -245,13 +255,21 @@
           return (it.proximo && it.proximo.idx === 0 && it.proximo.secao === it.secao) || it.ultimoDaSecao;
         }).map(function (it) {
           var r = it.lida.raizNome;
+          var chegada = it.proximo && it.proximo.idx === 0 && it.proximo.secao === it.secao
+            ? it.proximo.cifra : null;
           return {
             i: it.i,
             titulo: 'Segura no sus4',
             texto: 'Aqui a música para. Fique no sus4 um ou dois compassos e só então resolva.',
             sugestao: r + '4 → ' + r + '   (' + [r, nome(ctx, mod12(it.lida.raiz + 5)),
               nome(ctx, mod12(it.lida.raiz + 7)), r].join(' – ') + ')',
-            curta: r + '4'
+            curta: r + '4',
+            demo: {
+              antes: chegada ? [{ cifra: it.cifra }, { cifra: chegada }] : [{ cifra: it.cifra }],
+              depois: chegada
+                ? [{ cifra: r + '4' }, { cifra: it.cifra }, { cifra: chegada }]
+                : [{ cifra: r + '4' }, { cifra: it.cifra }]
+            }
           };
         });
       }
@@ -270,7 +288,11 @@
             titulo: 'Dobre ' + dobra,
             texto: 'Acorde parado: engorda sem mudar a cor. A terça fica de fora, dobrada ela pesa.',
             sugestao: nome(ctx, pc) + ' repetido uma oitava acima',
-            curta: '↑' + nome(ctx, pc)
+            curta: '↑' + nome(ctx, pc),
+            demo: {
+              antes: [{ cifra: it.cifra }],
+              depois: [{ cifra: it.cifra, dobrar: it.baixoPc === quinta ? '1' : '5' }]
+            }
           };
         });
       }
@@ -282,14 +304,19 @@
       detectar: function (ctx) {
         return vaos(ctx).map(function (v) {
           var baixo = grauNota(ctx, v.idxBaixo);
+          var forte = triadeDoGrau(ctx, v.idxBaixo - 2) + '/' + nome(ctx, baixo);
           return {
             i: v.de.i, entre: true,
             titulo: 'O baixo pode caminhar',
             texto: 'De ' + v.de.cifra + ' para ' + v.para.cifra + ' o baixo pula. Passando por ' +
                    nome(ctx, baixo) + ' ele anda de grau em grau.',
-            sugestao: 'forte ' + triadeDoGrau(ctx, v.idxBaixo - 2) + '/' + nome(ctx, baixo) +
+            sugestao: 'forte ' + forte +
                       '   ·   suave ' + triadeDoGrau(ctx, v.idxBaixo - 4) + '/' + nome(ctx, baixo),
-            curta: '→' + triadeDoGrau(ctx, v.idxBaixo - 2) + '/' + nome(ctx, baixo)
+            curta: '→' + forte,
+            demo: {
+              antes: [{ cifra: v.de.cifra }, { cifra: v.para.cifra }],
+              depois: [{ cifra: v.de.cifra }, { cifra: forte }, { cifra: v.para.cifra }]
+            }
           };
         });
       }
@@ -300,14 +327,19 @@
       resumo: 'Acordes intermediários para sair de um e chegar no outro.',
       detectar: function (ctx) {
         return vaos(ctx).map(function (v) {
+          var impulso = triadeDoGrau(ctx, v.idxPara - 1);
           return {
             i: v.de.i, entre: true,
             titulo: 'Cabe conexão',
             texto: 'Vão entre ' + v.de.cifra + ' e ' + v.para.cifra + '. Impulso empurra, caminho preparado alonga.',
-            sugestao: 'impulso ' + triadeDoGrau(ctx, v.idxPara - 1) +
+            sugestao: 'impulso ' + impulso +
                       '   ·   suave ' + triadeDoGrau(ctx, v.idxDe + 2) +
-                      '   ·   preparado ' + triadeDoGrau(ctx, v.idxPara - 2) + ' ' + triadeDoGrau(ctx, v.idxPara - 1),
-            curta: '→' + triadeDoGrau(ctx, v.idxPara - 1)
+                      '   ·   preparado ' + triadeDoGrau(ctx, v.idxPara - 2) + ' ' + impulso,
+            curta: '→' + impulso,
+            demo: {
+              antes: [{ cifra: v.de.cifra }, { cifra: v.para.cifra }],
+              depois: [{ cifra: v.de.cifra }, { cifra: impulso }, { cifra: v.para.cifra }]
+            }
           };
         });
       }
@@ -333,7 +365,11 @@
             texto: 'A melodia continua encaixando: ' + nome(ctx, b) +
                    ' é fundamental de um acorde, terça de outro e quinta de um terceiro.',
             sugestao: outras.join('   ou   '),
-            curta: outras[0]
+            curta: outras[0],
+            demo: {
+              antes: [{ cifra: it.cifra }],
+              depois: [{ cifra: outras[0] }]
+            }
           };
         }).filter(Boolean);
       }
@@ -352,7 +388,11 @@
             texto: 'Esquerda em 1 – 5 – 10 e a direita inteira livre para a melodia.',
             sugestao: [nome(ctx, r), nome(ctx, mod12(r + 7)), nome(ctx, mod12(r + terca))].join(' – ') +
                       '   (a terça uma oitava acima)',
-            curta: '1·5·10'
+            curta: '1·5·10',
+            demo: {
+              antes: [{ notas: [60 + r, 60 + r + terca, 60 + r + 7] }],
+              depois: [{ notas: [60 + r, 60 + r + 7, 60 + r + terca + 12] }]
+            }
           };
         });
       }
@@ -372,7 +412,11 @@
               ? 'Menor ou sus4 pede a tríade um tom abaixo, que é a sétima menor. Traz 7ª, 9ª e 11ª.'
               : 'Maior pede a tríade da quinta acima. Traz a 7ª maior e a 9ª.',
             sugestao: it.cifra.split('/')[0] + '  +  ' + nome(ctx, direita),
-            curta: '+' + nome(ctx, direita)
+            curta: '+' + nome(ctx, direita),
+            demo: {
+              antes: [{ cifra: it.cifra.split('/')[0] }],
+              depois: [{ lh: it.cifra.split('/')[0], rh: nome(ctx, direita) }]
+            }
           };
         });
       }

@@ -655,6 +655,37 @@ button { font-family: inherit; cursor: pointer; }
   padding: 16px 20px 18px;
   box-shadow: var(--sombra);
 }
+.card-exercicio.atual { border-color: var(--ouro); box-shadow: 0 0 0 3px var(--ouro-fundo); }
+
+/* rotina cronometrada */
+.rotina {
+  border: 1px solid var(--linha);
+  background: var(--fundo-cartao);
+  border-radius: var(--raio);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.rotina-acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rotina-registro { font-size: 12px; color: var(--tinta-fraca); font-family: var(--mono); }
+.rotina-painel { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rotina-painel:not(:empty) {
+  margin-top: 12px;
+  border-top: 1px dashed var(--linha);
+  padding-top: 12px;
+}
+.rotina-nome { font-family: var(--serif); font-size: 15px; }
+.rotina-tempo { font-family: var(--mono); font-size: 21px; min-width: 54px; }
+.rotina-botao {
+  font-size: 12.5px;
+  color: var(--tinta-suave);
+  background: none;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  padding: 3px 12px;
+  transition: all .12s;
+}
+.rotina-botao:hover { border-color: var(--ouro); color: var(--tinta); }
+.rotina-fim { margin: 0; font-size: 13.5px; color: var(--tinta-suave); }
 .exercicio-topo { display: flex; align-items: baseline; gap: 14px; }
 .exercicio-n {
   font-family: var(--mono);
@@ -870,6 +901,42 @@ button { font-family: inherit; cursor: pointer; }
 .musica-seletor { display: flex; gap: 4px; flex-wrap: wrap; }
 .musica-original { font-size: 12px; color: var(--tinta-fraca); font-family: var(--mono); }
 
+/* treino: andamento, loop e modo pergunta */
+.musica-treino { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.treino-bpm {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  background: var(--fundo-cartao);
+  padding: 2px 4px;
+}
+.treino-passo {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: none;
+  color: var(--tinta-suave);
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 50%;
+  padding: 0;
+}
+.treino-passo:hover { background: var(--ouro-fundo); color: var(--tinta); }
+.treino-visor { font-family: var(--mono); font-size: 12px; min-width: 52px; text-align: center; }
+.treino-toggle {
+  font-size: 12.5px;
+  color: var(--tinta-suave);
+  background: var(--fundo-cartao);
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  padding: 4px 12px;
+  transition: all .12s;
+}
+.treino-toggle:hover { border-color: var(--ouro); color: var(--tinta); }
+.treino-toggle.ativo { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+
 /* escolha do conceito */
 .conceito-escolha { margin-bottom: 18px; }
 .conceito-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -910,15 +977,29 @@ button { font-family: inherit; cursor: pointer; }
 .resumo-nome { font-family: var(--serif); font-size: 17px; margin: 0; }
 .resumo-texto { margin: 5px 0 0; font-size: 14px; color: #5a4a1e; }
 .resumo-vazio { margin: 10px 0 0; font-size: 13.5px; color: #5a4a1e; }
+.resumo-nota { margin: 6px 0 0; font-size: 12px; color: #8a6d10; }
 .resumo-lista { list-style: none; margin: 13px 0 0; padding: 0; display: grid; gap: 8px; }
 .resumo-lista li {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   gap: 11px;
   align-items: baseline;
   font-size: 13.5px;
   color: #5a4a1e;
 }
+.resumo-ouvir {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  white-space: nowrap;
+  color: var(--tinta-suave);
+  background: #fff;
+  border: 1px solid var(--ouro-claro);
+  border-radius: 999px;
+  padding: 2px 10px;
+  transition: all .12s;
+}
+.resumo-ouvir:hover { color: var(--tinta); border-color: var(--ouro); }
+.resumo-ouvir.tocando { background: var(--tinta); border-color: var(--tinta); color: #fff; }
 .resumo-onde {
   font-family: var(--mono);
   font-size: 12.5px;
@@ -976,6 +1057,18 @@ button { font-family: inherit; cursor: pointer; }
 }
 /* ocorrência seguinte da mesma receita: marca sem repetir o texto */
 .cifra-pos.repetido .cifra-chip { background: none; border-bottom-style: dotted; }
+
+/* play-along: o acorde da vez acende */
+.cifra-chip.tocando { background: var(--ouro); color: #fff; }
+.mini-play.tocando { background: var(--tinta); color: #fff; border-color: var(--tinta); }
+
+/* modo pergunta: o grau no lugar da cifra até o clique */
+.cifra-chip.pergunta {
+  color: #5c7482;
+  background: var(--fundo-suave);
+  border-bottom: 1px dashed var(--aco);
+}
+.cifra-chip.pergunta:hover { background: var(--aco-claro); color: var(--tinta); }
 .cifra-sugestao {
   display: block;
   font-size: 10.5px;

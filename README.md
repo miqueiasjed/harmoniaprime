@@ -27,6 +27,18 @@ com a sugestão pronta. O tom da música é independente do tom da página.
 A busca usa o acervo do Cifra Club. Se a importação automática falhar, o campo
 *colar a cifra* funciona igual, com qualquer cifra de qualquer lugar.
 
+Para tirar do papel e levar ao teclado:
+
+- O **▶ ouvir** de cada dica toca o trecho como está escrito e, em seguida,
+  com a dica aplicada, para o ouvido aprender junto.
+- O play de cada parte vira **play-along**: segue o BPM da barra de treino,
+  acende o acorde da vez e pode repetir em loop até a mão decorar.
+- O **modo pergunta** esconde as cifras e mostra só os graus; você deduz o
+  acorde e clica para conferir e tocar.
+- A seção de exercícios da aula tem **rotina cronometrada** (completa ou
+  curta): o caderno conduz exercício por exercício e guarda no navegador os
+  minutos praticados por dia.
+
 Quais conceitos aparecem em cada aula vem do campo `aplicar` da aula:
 
 ```js
