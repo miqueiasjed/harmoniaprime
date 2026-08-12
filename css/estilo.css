@@ -979,10 +979,12 @@ button { font-family: inherit; cursor: pointer; }
 .cifra-sugestao {
   display: block;
   font-size: 10.5px;
+  line-height: 1.2;
   color: var(--ouro);
   padding-left: 4px;
   margin-top: 1px;
-  cursor: help;
+  white-space: nowrap;
+  pointer-events: none;      /* nunca rouba o clique da cifra */
 }
 .cifra-letra { white-space: pre; color: var(--tinta-suave); }
 

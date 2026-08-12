@@ -100,7 +100,7 @@
    * Devolve o texto sem marcação e a coluna exata de cada acorde.
    */
   function lerLinhaHtml(bruta) {
-    var re = /<b[^>]*>([\s\S]*?)<\/b>|(&[a-zA-Z#0-9]+;)|([\s\S])/g;
+    var re = /<b[^>]*>([\s\S]*?)<\/b>|(<[^>]*>)|(&[a-zA-Z#0-9]+;)|([\s\S])/g;
     var cifras = [], texto = '', m;
     while ((m = re.exec(bruta)) !== null) {
       if (m[1] !== undefined) {
@@ -110,12 +110,20 @@
           texto += c;
         }
       } else if (m[2] !== undefined) {
-        texto += entidade(m[2]);
+        // tag que não é <b> (span de tablatura etc.): some sem virar texto
+      } else if (m[3] !== undefined) {
+        texto += entidade(m[3]);
       } else {
-        texto += m[3];
+        texto += m[4];
       }
     }
     return { texto: texto.replace(/\s+$/, ''), cifras: cifras };
+  }
+
+  /** Linha de tablatura de violão: não serve para o piano, cai fora. */
+  function ehTablatura(texto) {
+    if (/^\s*\[tab[^\]]*\]\s*$/i.test(texto)) return true;
+    return /^\s*[EADGBe][b#]?\|/.test(texto) && /[-–—]{3,}/.test(texto);
   }
 
   /* ---------- reconhecimento de acorde em texto colado ---------- */
@@ -172,6 +180,7 @@
 
     while (i < linhas.length) {
       var l = linhas[i];
+      if (ehTablatura(l.texto)) { i++; continue; }
       var cab = l.texto.match(/^\s*\[([^\]]+)\]/);
 
       // "[Intro]" sozinho abre a seção; "[Intro] Bm A D" abre e ainda traz acordes

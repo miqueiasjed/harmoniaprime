@@ -932,6 +932,14 @@
         var nivel = criar('div', 'cifra-acordes');
         var temSugestao = false;
 
+        // espaço livre de cada rótulo até o próximo acorde marcado da linha
+        var marcadosAqui = l.cifras.filter(function (c) { return porAcorde[c.i]; });
+        var espaco = {};
+        marcadosAqui.forEach(function (c, k) {
+          var prox = marcadosAqui[k + 1];
+          espaco[c.i] = prox ? prox.col - c.col : Infinity;
+        });
+
         l.cifras.forEach(function (c) {
           var it = porI[c.i];
           if (!it) return;
@@ -941,12 +949,15 @@
           caixinha.appendChild(chipDaCifra(it.cifra, { cifra: it.cifra }));
           if (marca) {
             caixinha.title = marca.titulo + ': ' + marca.texto;
+            var rotulo = marca.curta || marca.sugestao;
             var chave = marca.sugestao || marca.titulo;
-            if (!jaDito[chave]) {
+            // o rótulo é menor que a cifra, daí o 0.82; some se fosse atropelar o vizinho
+            var cabe = rotulo.length * 0.82 + 0.6 <= espaco[c.i];
+            if (!jaDito[chave] && cabe) {
               jaDito[chave] = true;
               temSugestao = true;
               var s2 = criar('span', 'cifra-sugestao');
-              s2.textContent = marca.entre ? '↳ ' + marca.sugestao : marca.sugestao;
+              s2.textContent = rotulo;
               caixinha.appendChild(s2);
             } else {
               caixinha.classList.add('repetido');

@@ -203,7 +203,8 @@
                    ' no baixo e deixe só a direita mudar.',
             sugestao: grupo.map(function (it) {
               return it.lida.raiz === ctx.tom.pc ? it.cifra : it.cifra.split('/')[0] + '/' + nome(ctx, ctx.tom.pc);
-            }).slice(0, 4).join('  ')
+            }).slice(0, 4).join('  '),
+            curta: '/' + nome(ctx, ctx.tom.pc)
           });
         });
         return marcas;
@@ -227,7 +228,8 @@
             i: it.i,
             titulo: 'Cabe sus2',
             texto: 'Acorde de passagem: sem a terça ele para de brigar com a melodia e não fecha a frase.',
-            sugestao: grafarAbaixo(ctx, baixo, 2, 4) + '2/' + baixo
+            sugestao: grafarAbaixo(ctx, baixo, 2, 4) + '2/' + baixo,
+            curta: grafarAbaixo(ctx, baixo, 2, 4) + '2'
           };
         });
       }
@@ -248,7 +250,8 @@
             titulo: 'Segura no sus4',
             texto: 'Aqui a música para. Fique no sus4 um ou dois compassos e só então resolva.',
             sugestao: r + '4 → ' + r + '   (' + [r, nome(ctx, mod12(it.lida.raiz + 5)),
-              nome(ctx, mod12(it.lida.raiz + 7)), r].join(' – ') + ')'
+              nome(ctx, mod12(it.lida.raiz + 7)), r].join(' – ') + ')',
+            curta: r + '4'
           };
         });
       }
@@ -266,7 +269,8 @@
             i: it.i,
             titulo: 'Dobre ' + dobra,
             texto: 'Acorde parado: engorda sem mudar a cor. A terça fica de fora, dobrada ela pesa.',
-            sugestao: nome(ctx, pc) + ' repetido uma oitava acima'
+            sugestao: nome(ctx, pc) + ' repetido uma oitava acima',
+            curta: '↑' + nome(ctx, pc)
           };
         });
       }
@@ -284,7 +288,8 @@
             texto: 'De ' + v.de.cifra + ' para ' + v.para.cifra + ' o baixo pula. Passando por ' +
                    nome(ctx, baixo) + ' ele anda de grau em grau.',
             sugestao: 'forte ' + triadeDoGrau(ctx, v.idxBaixo - 2) + '/' + nome(ctx, baixo) +
-                      '   ·   suave ' + triadeDoGrau(ctx, v.idxBaixo - 4) + '/' + nome(ctx, baixo)
+                      '   ·   suave ' + triadeDoGrau(ctx, v.idxBaixo - 4) + '/' + nome(ctx, baixo),
+            curta: '→' + triadeDoGrau(ctx, v.idxBaixo - 2) + '/' + nome(ctx, baixo)
           };
         });
       }
@@ -301,7 +306,8 @@
             texto: 'Vão entre ' + v.de.cifra + ' e ' + v.para.cifra + '. Impulso empurra, caminho preparado alonga.',
             sugestao: 'impulso ' + triadeDoGrau(ctx, v.idxPara - 1) +
                       '   ·   suave ' + triadeDoGrau(ctx, v.idxDe + 2) +
-                      '   ·   preparado ' + triadeDoGrau(ctx, v.idxPara - 2) + ' ' + triadeDoGrau(ctx, v.idxPara - 1)
+                      '   ·   preparado ' + triadeDoGrau(ctx, v.idxPara - 2) + ' ' + triadeDoGrau(ctx, v.idxPara - 1),
+            curta: '→' + triadeDoGrau(ctx, v.idxPara - 1)
           };
         });
       }
@@ -326,7 +332,8 @@
             titulo: 'Outra tríade no mesmo baixo',
             texto: 'A melodia continua encaixando: ' + nome(ctx, b) +
                    ' é fundamental de um acorde, terça de outro e quinta de um terceiro.',
-            sugestao: outras.join('   ou   ')
+            sugestao: outras.join('   ou   '),
+            curta: outras[0]
           };
         }).filter(Boolean);
       }
@@ -344,7 +351,8 @@
             titulo: 'Abre a tríade',
             texto: 'Esquerda em 1 – 5 – 10 e a direita inteira livre para a melodia.',
             sugestao: [nome(ctx, r), nome(ctx, mod12(r + 7)), nome(ctx, mod12(r + terca))].join(' – ') +
-                      '   (a terça uma oitava acima)'
+                      '   (a terça uma oitava acima)',
+            curta: '1·5·10'
           };
         });
       }
@@ -363,7 +371,8 @@
             texto: menor
               ? 'Menor ou sus4 pede a tríade um tom abaixo, que é a sétima menor. Traz 7ª, 9ª e 11ª.'
               : 'Maior pede a tríade da quinta acima. Traz a 7ª maior e a 9ª.',
-            sugestao: it.cifra.split('/')[0] + '  +  ' + nome(ctx, direita)
+            sugestao: it.cifra.split('/')[0] + '  +  ' + nome(ctx, direita),
+            curta: '+' + nome(ctx, direita)
           };
         });
       }
