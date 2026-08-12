@@ -220,6 +220,10 @@
       id: 'sus2', nome: 'Sus2', t: 236,
       resumo: 'Tirar a terça dos acordes de passagem para não brigar com a melodia.',
       detectar: function (ctx) {
+        function diatonico(pc) { return ctx.escala.indexOf(mod12(pc - ctx.tom.pc)) !== -1; }
+        function sus2NoTom(raizPc) {
+          return diatonico(raizPc) && diatonico(raizPc + 2) && diatonico(raizPc + 7);
+        }
         return ctx.itens.filter(function (it) {
           if (!triadePura(it)) return false;
           if (it.idx === 0) return false;             // a tônica é destino, fica pura
@@ -229,19 +233,28 @@
           return true;
         }).map(function (it) {
           var baixo = it.lida.baixoNome || it.lida.raizNome;
-          var sug = grafarAbaixo(ctx, baixo, 2, 4) + '2/' + baixo;
+          var sug;
+          if (sus2NoTom(mod12(it.baixoPc - 4))) {
+            // a forma da aula: sus2 uma terça maior abaixo do baixo (C2/E, F2/A, G2/B)
+            sug = grafarAbaixo(ctx, baixo, 2, 4) + '2/' + baixo;
+          } else if (sus2NoTom(it.lida.raiz)) {
+            // senão, o básico do conceito: tira a terça do próprio acorde (D2, F2, G2)
+            sug = it.lida.raizNome + '2' + (it.lida.baixoNome ? '/' + it.lida.baixoNome : '');
+          } else {
+            return null;                              // sairia do tom: melhor dica nenhuma
+          }
           return {
             i: it.i,
             titulo: 'Cabe sus2',
             texto: 'Acorde de passagem: sem a terça ele para de brigar com a melodia e não fecha a frase.',
             sugestao: sug,
-            curta: grafarAbaixo(ctx, baixo, 2, 4) + '2',
+            curta: sug.split('/')[0],
             demo: {
               antes: [{ cifra: it.cifra }, { cifra: it.proximo.cifra }],
               depois: [{ cifra: sug }, { cifra: it.proximo.cifra }]
             }
           };
-        });
+        }).filter(Boolean);
       }
     },
 
@@ -251,6 +264,8 @@
       detectar: function (ctx) {
         return ctx.itens.filter(function (it) {
           if (!triadePura(it) || it.idx === 0) return false;
+          // a quarta precisa ser do tom: F4 em dó maior traria um si bemol
+          if (ctx.escala.indexOf(mod12(it.lida.raiz + 5 - ctx.tom.pc)) === -1) return false;
           // o ponto onde a música para: antes de voltar à tônica ou no fim da parte
           return (it.proximo && it.proximo.idx === 0 && it.proximo.secao === it.secao) || it.ultimoDaSecao;
         }).map(function (it) {
@@ -261,7 +276,7 @@
             i: it.i,
             titulo: 'Segura no sus4',
             texto: 'Aqui a música para. Fique no sus4 um ou dois compassos e só então resolva.',
-            sugestao: r + '4 → ' + r + '   (' + [r, nome(ctx, mod12(it.lida.raiz + 5)),
+            sugestao: r + '4 → ' + it.cifra + '   (' + [r, nome(ctx, mod12(it.lida.raiz + 5)),
               nome(ctx, mod12(it.lida.raiz + 7)), r].join(' – ') + ')',
             curta: r + '4',
             demo: {
@@ -403,13 +418,14 @@
       resumo: 'Tríade na esquerda mais tríade na direita, pela regra da sétima.',
       detectar: function (ctx) {
         return ctx.itens.map(function (it) {
-          var menor = familia(it.lida.qual) === 'm' || /sus4|^4/.test(it.lida.qual);
-          var direita = menor ? mod12(it.lida.raiz - 2) : mod12(it.lida.raiz + 7);
+          // o V é dominante: mesmo maior, pede um tom abaixo, como o G4 + F da tabela da aula
+          var tomAbaixo = familia(it.lida.qual) === 'm' || /sus4|^4/.test(it.lida.qual) || it.idx === 4;
+          var direita = tomAbaixo ? mod12(it.lida.raiz - 2) : mod12(it.lida.raiz + 7);
           return {
             i: it.i,
-            titulo: menor ? 'Poliacorde: um tom abaixo' : 'Poliacorde: a quinta acima',
-            texto: menor
-              ? 'Menor ou sus4 pede a tríade um tom abaixo, que é a sétima menor. Traz 7ª, 9ª e 11ª.'
+            titulo: tomAbaixo ? 'Poliacorde: um tom abaixo' : 'Poliacorde: a quinta acima',
+            texto: tomAbaixo
+              ? 'Menor, sus4 ou dominante pede a tríade um tom abaixo, que entrega a sétima menor. Traz 7ª, 9ª e 11ª.'
               : 'Maior pede a tríade da quinta acima. Traz a 7ª maior e a 9ª.',
             sugestao: it.cifra.split('/')[0] + '  +  ' + nome(ctx, direita),
             curta: '+' + nome(ctx, direita),
