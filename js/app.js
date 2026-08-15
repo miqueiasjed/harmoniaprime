@@ -11,7 +11,8 @@
 
   var estado = {
     tom: 'C',
-    aula: null
+    aula: null,
+    tela: 'hoje'
   };
 
   var aulaCorrente = null;
@@ -19,42 +20,44 @@
   /* ---------- utilidades ---------- */
 
   function $(sel, raiz) { return (raiz || document).querySelector(sel); }
-  function criar(tag, classe, texto) {
+  function criar(tag, classe, texto, tom) {
     var e = document.createElement(tag);
     if (classe) e.className = classe;
-    if (texto !== undefined) e.innerHTML = interpolar(texto);
+    if (texto !== undefined) e.innerHTML = interpolar(texto, tom);
     return e;
   }
 
-  /** Troca {C}, {G/B}, {E} no meio do texto pela cifra no tom atual. */
-  function interpolar(texto) {
+  /** Troca {C}, {G/B}, {E} no meio do texto pela cifra no tom pedido. */
+  function interpolar(texto, tom) {
     if (typeof texto !== 'string' || texto.indexOf('{') === -1) return texto;
     return texto.replace(/\{([A-G][^{}]{0,14})\}/g, function (todo, cifra) {
-      var t = tt(cifra);
+      var t = tt(cifra, tom);
       return t === cifra ? cifra : t;
     });
   }
 
-  function tomAtual() {
-    for (var i = 0; i < M.TONS.length; i++) if (M.TONS[i].nome === estado.tom) return M.TONS[i];
+  /** O tom pedido, ou o tom da página quando ninguém pediu nada. */
+  function tomAtual(nome) {
+    nome = nome || estado.tom;
+    for (var i = 0; i < M.TONS.length; i++) if (M.TONS[i].nome === nome) return M.TONS[i];
     return M.TONS[0];
   }
 
-  /** Semitons de C até o tom atual, pelo caminho mais curto. */
-  function semitons() {
-    var pc = tomAtual().pc;
+  /** Semitons de C até o tom, pelo caminho mais curto. */
+  function semitons(tom) {
+    var pc = tomAtual(tom).pc;
     return pc > 6 ? pc - 12 : pc;
   }
 
-  function tt(cifra) {
-    return M.transporCifra(cifra, semitons(), tomAtual().bemol);
+  function tt(cifra, tom) {
+    return M.transporCifra(cifra, semitons(tom), tomAtual(tom).bemol);
   }
 
   var PISO = 48, TETO = 83;   // C3 .. B5 — registro padrão de todos os teclados
 
-  function vozesDe(item) {
+  function vozesDe(item, tom) {
     // itens da seção de música já vêm no tom certo e ignoram o tom da página
-    var v = M.vozes(item, item.absoluto ? 0 : semitons());
+    var v = M.vozes(item, item.absoluto ? 0 : semitons(tom));
     var todas = v.esquerda.concat(v.direita);
     if (!todas.length) return v;
     var desloca = 0;
@@ -70,25 +73,26 @@
     return v;
   }
 
-  function tocarItem(item) {
-    var v = vozesDe(item);
+  function tocarItem(item, tom) {
+    var v = vozesDe(item, tom);
     M.tocarNotas(v.esquerda.concat(v.direita), { duracao: 2.2 });
   }
 
   /* ---------- componentes ---------- */
 
-  function cifraChip(item, extra) {
+  function cifraChip(item, extra, tom) {
     var it = typeof item === 'string' ? { cifra: item } : item;
+    var rotulo = it.cifra ? tt(it.cifra, tom) : tt(it.lh, tom) + ' + ' + tt(it.rh, tom);
     var b = criar('button', 'chip' + (extra ? ' ' + extra : ''));
     b.type = 'button';
-    b.innerHTML = '<span class="chip-cifra">' + tt(it.cifra) + '</span>';
-    b.setAttribute('aria-label', 'Tocar ' + tt(it.cifra));
+    b.innerHTML = '<span class="chip-cifra">' + rotulo + '</span>';
+    b.setAttribute('aria-label', 'Tocar ' + rotulo);
     b.addEventListener('click', function () {
-      tocarItem(it);
+      tocarItem(it, tom);
       b.classList.add('ativo');
       setTimeout(function () { b.classList.remove('ativo'); }, 420);
     });
-    espiar(b, it);
+    espiar(b, it, tom);
     return b;
   }
 
@@ -111,14 +115,14 @@
     return espia.caixa;
   }
 
-  function abrirEspia(botao, item) {
+  function abrirEspia(botao, item, tom) {
     var c = caixaEspia();
     c.innerHTML = '';
     var cab = criar('div', 'espia-cabecalho');
     var rotuloEspia = item.cifra || (item.lh + ' + ' + item.rh);
-    cab.appendChild(criar('span', 'espia-cifra', item.absoluto ? rotuloEspia : tt(rotuloEspia)));
-    var bemolEspia = item.absoluto ? !!item.bemol : tomAtual().bemol;
-    var v = vozesDe(item);
+    cab.appendChild(criar('span', 'espia-cifra', item.absoluto ? rotuloEspia : tt(rotuloEspia, tom)));
+    var bemolEspia = item.absoluto ? !!item.bemol : tomAtual(tom).bemol;
+    var v = vozesDe(item, tom);
     var vistos = {}, nomes = [];
     v.esquerda.concat(v.direita).forEach(function (m) {
       var n = M.midiParaNota(m, bemolEspia).replace(/\d+$/, '');
@@ -126,7 +130,7 @@
     });
     cab.appendChild(criar('span', 'espia-notas', nomes.join(' · ')));
     c.appendChild(cab);
-    c.appendChild(tecladoDe(item));
+    c.appendChild(tecladoDe(item, { tom: tom }));
     c.classList.add('visivel');
 
     var r = botao.getBoundingClientRect();
@@ -150,12 +154,12 @@
   }
 
   /** Liga o preview de teclado a qualquer botão de cifra da página. */
-  function espiar(botao, item) {
+  function espiar(botao, item, tom) {
     if (!item || (!item.cifra && !item.lh)) return;
     function abrir() {
       clearTimeout(espia.saida);
       clearTimeout(espia.timer);
-      espia.timer = setTimeout(function () { abrirEspia(botao, item); }, 110);
+      espia.timer = setTimeout(function () { abrirEspia(botao, item, tom); }, 110);
     }
     function fechar() {
       clearTimeout(espia.timer);
@@ -164,20 +168,20 @@
     }
     botao.addEventListener('mouseenter', abrir);
     botao.addEventListener('mouseleave', fechar);
-    botao.addEventListener('focus', function () { abrirEspia(botao, item); });
+    botao.addEventListener('focus', function () { abrirEspia(botao, item, tom); });
     botao.addEventListener('blur', fecharEspia);
     // no celular não existe hover: o toque toca, mostra e deixa fixado
     botao.addEventListener('click', function () {
       clearTimeout(espia.saida);
       espia.fixado = (espia.ponteiro === 'touch');
-      abrirEspia(botao, item);
+      abrirEspia(botao, item, tom);
     });
   }
 
   function tecladoDe(item, opcoes) {
     opcoes = opcoes || {};
     var caixa = criar('div', 'caixa-teclado');
-    var v = vozesDe(item);
+    var v = vozesDe(item, opcoes.tom);
     var marc = null;
     if (item.marcadores) {
       marc = item.marcadores.map(function (mk) {
@@ -188,7 +192,7 @@
       esquerda: v.esquerda,
       direita: v.direita,
       marcadores: marc,
-      bemol: item.absoluto ? !!item.bemol : tomAtual().bemol,
+      bemol: item.absoluto ? !!item.bemol : tomAtual(opcoes.tom).bemol,
       rotulos: opcoes.rotulos !== false,
       preferido: { inicio: PISO, fim: TETO }
     });
@@ -245,7 +249,7 @@
     return player;
   }
 
-  function abrirVideo(idVideo, segundos, rotulo, origem) {
+  function abrirVideo(idVideo, segundos, rotulo, origem, fim) {
     var p = montarPlayer();
     M.pararSequencia();
     fecharEspia();
@@ -253,7 +257,8 @@
     var ifr = criar('iframe');
     ifr.src = 'https://www.youtube-nocookie.com/embed/' + idVideo +
       '?autoplay=1&rel=0&modestbranding=1&playsinline=1' +
-      (segundos ? '&start=' + segundos : '');
+      (segundos ? '&start=' + segundos : '') +
+      (fim ? '&end=' + fim : '');
     ifr.title = rotulo || 'Vídeo da aula';
     ifr.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
     ifr.setAttribute('allowfullscreen', '');
@@ -627,11 +632,11 @@
     return sec;
   };
 
-  function linhaCifras(acordes, bpm) {
+  function linhaCifras(acordes, bpm, tom) {
     var caixa = criar('div', 'linha-cifras');
     var chips = [];
     acordes.forEach(function (c, i) {
-      var b = cifraChip(c);
+      var b = cifraChip(c, null, tom);
       chips.push(b);
       caixa.appendChild(b);
       if (i < acordes.length - 1) caixa.appendChild(criar('span', 'seta-seq', '→'));
@@ -641,7 +646,7 @@
     btn.setAttribute('aria-label', 'Tocar a sequência');
     btn.addEventListener('click', function () {
       M.tocarSequencia(acordes.map(function (c) {
-        var v = vozesDe({ cifra: c });
+        var v = vozesDe(typeof c === 'string' ? { cifra: c } : c, tom);
         return v.esquerda.concat(v.direita);
       }), {
         bpm: bpm || 54,
@@ -1336,7 +1341,9 @@
 
     painel.appendChild(procura);
     painel.appendChild(areaColar(raiz));
-    setTimeout(function () { campo.focus(); }, 0);
+    // sem foco automático: a busca fica no fim da aula e puxava a página
+    // inteira para o rodapé só de abrir a aula. Quem chega por "aplicar
+    // numa música" recebe o foco em irPara(), junto com a rolagem.
     return painel;
   }
 
@@ -1506,13 +1513,71 @@
     });
   }
 
-  function irPara(id) {
+  function irPara(id, ancora) {
     var aula = AULAS.filter(function (a) { return a.id === id; })[0] || AULAS[0];
     estado.aula = aula.id;
     salvar();
+    bibliotecaMontada = true;
+    mostrarTela('biblioteca');
     renderMenu();
     renderAula(aula);
     if (location.hash !== '#' + aula.id) history.replaceState(null, '', '#' + aula.id);
+    if (ancora) {
+      var alvo = document.getElementById(ancora);
+      // salto direto: a aula é longa e rolagem suave daqui demora demais
+      if (alvo) setTimeout(function () {
+        alvo.scrollIntoView({ block: 'start' });
+        var campo = alvo.querySelector('.musica-campo');
+        if (campo) campo.focus({ preventScroll: true });
+      }, 60);
+    }
+  }
+
+  /* ---------- as duas personalidades: Hoje e Biblioteca ---------- */
+
+  var bibliotecaMontada = false;
+
+  function mostrarTela(nome) {
+    estado.tela = nome;
+    var th = $('#tela-hoje'), tb = $('#tela-biblioteca');
+    if (!th || !tb) return;
+    th.hidden = nome !== 'hoje';
+    tb.hidden = nome !== 'biblioteca';
+    document.body.classList.toggle('em-hoje', nome === 'hoje');
+    document.body.classList.remove('menu-aberto');
+    if (nome === 'hoje') {
+      if (rotina.parar) rotina.parar();
+      M.pararSequencia();
+      limparParte();
+      fecharEspia();
+      fecharVideo();
+      if (global.Hoje) global.Hoje.render();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function irParaHoje() {
+    mostrarTela('hoje');
+    if (location.hash !== '#hoje') history.replaceState(null, '', '#hoje');
+  }
+
+  function abrirBiblioteca() {
+    if (!bibliotecaMontada) {
+      bibliotecaMontada = true;
+      irPara(estado.aula || AULAS[0].id);
+      return;
+    }
+    mostrarTela('biblioteca');
+    history.replaceState(null, '', '#' + estado.aula);
+  }
+
+  /** Roteamento: sem hash é Hoje. A biblioteca fica atrás de um clique. */
+  function rotear(hash) {
+    hash = (hash || '').replace('#', '');
+    if (!hash || hash === 'hoje') { mostrarTela('hoje'); return; }
+    if (hash === 'biblioteca') { abrirBiblioteca(); return; }
+    if (hash.indexOf('aula-') === 0) { irPara(hash); return; }
+    mostrarTela('hoje');
   }
 
   function redesenhar() {
@@ -1559,13 +1624,15 @@
 
   function iniciar() {
     carregar();
-    var hash = (location.hash || '').replace('#', '');
-    if (hash) estado.aula = hash;
     if (!estado.aula) estado.aula = AULAS[0].id;
 
     renderTons();
     renderMenu();
-    irPara(estado.aula);
+    rotear(location.hash);
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ir="hoje"]'), function (b) {
+      b.addEventListener('click', function (ev) { ev.preventDefault(); irParaHoje(); });
+    });
 
     $('#abrir-menu').addEventListener('click', function () {
       document.body.classList.toggle('menu-aberto');
@@ -1595,9 +1662,33 @@
 
     window.addEventListener('hashchange', function () {
       var h = (location.hash || '').replace('#', '');
-      if (h && h !== estado.aula) irPara(h);
+      if (h.indexOf('aula-') === 0 && h === estado.aula && estado.tela === 'biblioteca') return;
+      rotear(h);
     });
   }
+
+  /* ---------- o que o treinador usa daqui ---------- */
+
+  global.HP = {
+    criar: criar,
+    interpolar: interpolar,
+    tt: tt,
+    tocarItem: tocarItem,
+    tecladoDe: tecladoDe,
+    cifraChip: cifraChip,
+    linhaCifras: linhaCifras,
+    vozesDe: vozesDe,
+    abrirVideo: abrirVideo,
+    relogio: relogio,
+    irParaHoje: irParaHoje,
+    abrirBiblioteca: abrirBiblioteca,
+    irParaAula: irPara,
+    aulaDe: function (numero) {
+      return AULAS.filter(function (a) { return a.numero === numero; })[0] || null;
+    },
+    pararSom: function () { M.pararSequencia(); },
+    ativarAudio: function () { M.ativarAudio(); }
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();

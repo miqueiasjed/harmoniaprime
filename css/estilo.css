@@ -1202,3 +1202,360 @@ body.video-aberto { overflow: hidden; }
 @media print {
   .lateral, .barra-tom { display: none; }
 }
+
+/* ===========================================================
+   Tela Hoje · uma coisa por vez
+   O oposto da biblioteca: nada além da próxima ação.
+   =========================================================== */
+
+.tela-hoje {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fundo);
+}
+.tela-hoje[hidden] { display: none; }
+
+.hoje-marca {
+  padding: 22px 26px 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+}
+
+.hoje-palco {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 22px 80px;
+}
+
+.hoje-cartao {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.hoje-cartao.centro { align-items: center; text-align: center; }
+
+.hoje-saudacao {
+  font-family: var(--serif);
+  font-size: 19px;
+  color: var(--tinta-suave);
+  margin: 0 0 34px;
+}
+
+.hoje-etiqueta {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ouro);
+  margin: 0 0 10px;
+}
+.hoje-etiqueta .hoje-tempo {
+  color: var(--tinta-fraca);
+  letter-spacing: .12em;
+}
+
+.hoje-titulo {
+  font-family: var(--serif);
+  font-size: clamp(30px, 6vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  margin: 0;
+}
+
+.hoje-recado {
+  color: var(--tinta-suave);
+  font-size: 15px;
+  margin: 14px 0 0;
+  font-style: italic;
+}
+
+.hoje-progressao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 28px 0 0;
+}
+.hoje-progressao .chip { font-size: 18px; padding: 8px 15px; }
+
+.hoje-rotulo {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.hoje-aprende { margin: 32px 0 0; max-width: 56ch; }
+.hoje-aprende p { margin: 0; color: var(--tinta-suave); font-size: 16px; }
+
+.hoje-par {
+  display: flex;
+  gap: 34px;
+  flex-wrap: wrap;
+  margin: 28px 0 0;
+  padding: 18px 20px;
+  background: var(--fundo-suave);
+  border-radius: var(--raio);
+}
+.hoje-lado { min-width: 0; }
+.pp-tira, .hoje-lado > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pp-seta { color: var(--tinta-fraca); font-size: 12px; }
+
+.hoje-tom {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--tinta-fraca);
+  margin: 16px 0 0;
+}
+
+.hoje-comecar {
+  margin: 40px 0 0;
+  background: var(--tinta);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  padding: 15px 30px;
+  font-size: 15px;
+  letter-spacing: .02em;
+  box-shadow: var(--sombra);
+  transition: transform .12s, background .12s;
+}
+.hoje-comecar:hover { background: #000; transform: translateY(-1px); }
+.hoje-comecar:active { transform: translateY(0); }
+
+.hoje-link {
+  background: none;
+  border: 0;
+  color: var(--tinta-fraca);
+  font-size: 13px;
+  padding: 10px 2px;
+  text-decoration: underline;
+  text-decoration-color: var(--linha);
+  text-underline-offset: 3px;
+}
+.hoje-link:hover { color: var(--tinta); }
+.hoje-link.discreto { font-size: 12px; margin-top: 4px; opacity: .85; }
+
+.hoje-rodape { margin-top: 26px; }
+
+.hoje-nota {
+  margin: 34px 0 0;
+  font-size: 12.5px;
+  color: var(--tinta-fraca);
+  border-top: 1px solid var(--linha);
+  padding-top: 14px;
+  width: 100%;
+}
+.hoje-cartao.centro .hoje-nota { border-top: 0; padding-top: 0; }
+
+/* ---------- passo a passo ---------- */
+
+.hoje-cartao.pratica { align-items: stretch; }
+
+.pp-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--linha);
+  padding-bottom: 12px;
+  margin-bottom: 26px;
+}
+.pp-tit {
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--tinta-suave);
+}
+.pp-sair {
+  background: none;
+  border: 0;
+  color: var(--tinta-fraca);
+  font-size: 12px;
+  padding: 4px;
+}
+.pp-sair:hover { color: var(--tinta); }
+
+.pp-contador {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ouro);
+  margin: 0 0 10px;
+}
+
+.pp-texto {
+  font-family: var(--serif);
+  font-size: clamp(22px, 4.4vw, 30px);
+  line-height: 1.22;
+  letter-spacing: -.015em;
+  margin: 0 0 8px;
+  font-weight: 400;
+}
+
+.pp-painel { margin: 22px 0 0; }
+.pp-rotulo {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  display: block;
+  margin-bottom: 6px;
+}
+.pp-painel .linha-cifras { margin: 0 0 10px; }
+.pp-painel .pp-rotulo { margin-top: 8px; }
+.pp-painel .chip { font-size: 16px; padding: 7px 13px; }
+.pp-visor {
+  margin-top: 10px;
+  background: var(--fundo-cartao);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 10px;
+}
+.pp-visor .caixa-teclado { margin: 0; }
+.pp-visor .teclado { max-width: 100%; }
+.pp-visor .rotulo-nota { font-size: 11px; }
+
+.chip.oculto { position: relative; }
+.chip.oculto .chip-cifra { opacity: 0; }
+.chip.oculto::after {
+  content: '·';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tinta-fraca);
+  font-family: var(--mono);
+}
+.pp-painel.escondido .pp-visor { display: none; }
+.pp-esconder {
+  background: none;
+  border: 0;
+  color: var(--tinta-fraca);
+  font-size: 12px;
+  padding: 8px 2px 0;
+  text-decoration: underline;
+  text-decoration-color: var(--linha);
+  text-underline-offset: 3px;
+}
+.pp-esconder:hover { color: var(--tinta); }
+
+.pp-nota {
+  margin: 22px 0 0;
+  color: var(--tinta-suave);
+  font-size: 15px;
+  max-width: 56ch;
+}
+
+.pp-video, .pp-musica { margin: 22px 0 0; }
+.pp-botao-video {
+  border: 1px solid var(--linha);
+  background: #fff;
+  color: var(--tinta);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.pp-botao-video:hover { border-color: var(--ouro); }
+.pp-botao-video .ico { font-size: 9px; color: var(--ouro); }
+
+.hoje-cartao.pratica .hoje-comecar { align-self: flex-start; }
+.hoje-cartao.pratica .hoje-link { align-self: flex-start; }
+
+/* ---------- fim da prática ---------- */
+
+.hoje-pergunta {
+  font-family: var(--serif);
+  font-size: clamp(24px, 5vw, 34px);
+  line-height: 1.2;
+  font-weight: 400;
+  margin: 0 0 10px;
+  max-width: 20ch;
+}
+
+.hoje-selo {
+  font-family: var(--serif);
+  font-size: clamp(26px, 5vw, 36px);
+  margin: 0 0 12px;
+  letter-spacing: -.01em;
+}
+
+.hoje-frase {
+  color: var(--tinta-suave);
+  font-size: 16px;
+  margin: 0;
+  max-width: 44ch;
+}
+.hoje-frase.grande { font-family: var(--serif); font-size: 28px; color: var(--tinta); }
+.hoje-frase .mono { font-family: var(--mono); font-size: 13px; }
+
+.hoje-feedback { margin: 34px 0 0; }
+.hoje-rostos { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.hoje-rosto {
+  border: 1px solid var(--linha);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 16px 8px 12px;
+  font-size: 13px;
+  color: var(--tinta-suave);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.hoje-rosto:hover { border-color: var(--ouro-claro); }
+.hoje-rosto .rosto { font-size: 16px; line-height: 1; }
+.hoje-rosto.escolhido {
+  border-color: var(--ouro);
+  background: var(--ouro-fundo);
+  color: var(--tinta);
+}
+
+/* ---------- volta para hoje, dentro da biblioteca ---------- */
+
+.voltar-hoje {
+  margin-top: 14px;
+  border: 1px solid var(--linha);
+  background: #fff;
+  color: var(--tinta-suave);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  width: 100%;
+  text-align: left;
+}
+.voltar-hoje:hover { border-color: var(--ouro); color: var(--tinta); }
+.voltar-hoje.compacto { display: none; width: auto; margin: 0; white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .hoje-marca { padding: 16px 18px 0; }
+  .hoje-palco { padding: 18px 18px 60px; align-items: flex-start; }
+  .hoje-saudacao { margin-bottom: 22px; }
+  .hoje-par { flex-direction: column; gap: 16px; }
+  .hoje-comecar { width: 100%; text-align: center; }
+  .voltar-hoje.compacto { display: inline-block; }
+}

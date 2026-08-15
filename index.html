@@ -3,20 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Harmonia Prime — caderno de estudos</title>
-<meta name="description" content="Caderno interativo de harmonia: anotações das aulas com teclado, som e transposição de tom.">
+<title>Harmonia Prime · prática de hoje</title>
+<meta name="description" content="Treinador de harmonia no teclado: uma microprática de cinco minutos por vez, com a biblioteca de aulas guardada atrás.">
 <meta name="theme-color" content="#fbf9f5">
 <link rel="stylesheet" href="css/estilo.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2317171a'/><rect x='7' y='8' width='4' height='16' fill='%23fff'/><rect x='12' y='8' width='4' height='16' fill='%23c9a227'/><rect x='17' y='8' width='4' height='16' fill='%23fff'/><rect x='22' y='8' width='3' height='16' fill='%23c9a227'/></svg>">
 </head>
 <body>
 
-<div class="layout">
+<!-- ---------- HOJE: uma coisa por vez ---------- -->
+<section id="tela-hoje" class="tela-hoje">
+  <header class="hoje-marca">
+    <span>Harmonia Prime</span>
+  </header>
+  <main class="hoje-palco" id="hoje-palco"></main>
+</section>
+
+<!-- ---------- BIBLIOTECA: tudo o que está guardado ---------- -->
+<div id="tela-biblioteca" class="layout" hidden>
 
   <aside class="lateral" id="lateral">
     <div class="marca">
       <h1>Harmonia Prime</h1>
-      <p class="sub">Caderno de estudos · 12 aulas</p>
+      <p class="sub">Biblioteca · 12 aulas</p>
+      <button class="voltar-hoje" type="button" data-ir="hoje">← Prática de hoje</button>
     </div>
     <nav id="lista-aulas"></nav>
   </aside>
@@ -26,6 +36,7 @@
   <div class="principal">
     <div class="barra-tom">
       <button id="abrir-menu" type="button" aria-label="Abrir menu de aulas">☰</button>
+      <button class="voltar-hoje compacto" type="button" data-ir="hoje">← Hoje</button>
       <span class="rotulo">Tom</span>
       <div id="seletor-tom"></div>
       <span class="pista">passe o mouse em qualquer cifra para ver o teclado</span>
@@ -40,6 +51,9 @@
 <script src="js/cifras.js"></script>
 <script src="js/aplicar.js"></script>
 <script src="conteudo/aulas.js"></script>
+<script src="conteudo/praticas.js"></script>
+<script src="js/treinador.js"></script>
+<script src="js/hoje.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

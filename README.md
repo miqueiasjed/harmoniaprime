@@ -1,26 +1,118 @@
-# Harmonia Prime — caderno de estudos
+# Harmonia Prime · treinador de prática
 
-Site estático com as anotações das 12 aulas de harmonia. Cada acorde toca som,
-acende no teclado e pode ser transposto para qualquer um dos 12 tons.
+Duas personalidades no mesmo site.
+
+**Hoje** é a tela inicial: uma microprática de cinco minutos, uma decisão só.
+Sem lista de exercícios, sem fila, sem contador de pendências. Só aparece
+prática nova depois que a atual for marcada como praticada, e mesmo assim
+apenas se você pedir.
+
+**Biblioteca** é onde mora tudo: as 12 aulas, anotações, conceitos, exercícios,
+vídeo, repertório, e o "aplicar numa música". Fica atrás de um clique.
 
 Não tem build, não tem dependência, não tem servidor. É só HTML, CSS e JavaScript.
 
 ```
-index.html          página única
-css/estilo.css      visual
-js/musica.js        teoria (cifras, transposição, condução de vozes) + piano
-js/teclado.js       desenho do teclado em SVG
-js/cifras.js        busca e leitura de cifras de fora
-js/aplicar.js       análise da música e detectores de conceito
-js/app.js           montagem da página
-conteudo/aulas.js   👈 o conteúdo das aulas fica aqui
+index.html             as duas telas
+css/estilo.css         visual
+js/musica.js           teoria (cifras, transposição, condução de vozes) + piano
+js/teclado.js          desenho do teclado em SVG
+js/cifras.js           busca e leitura de cifras de fora
+js/aplicar.js          análise da música e detectores de conceito
+js/treinador.js        escolhe a prática do dia e guarda o histórico
+js/hoje.js             a tela Hoje: cartão, passos, encerramento
+js/app.js              biblioteca, roteamento e componentes musicais
+conteudo/aulas.js      👈 o conteúdo das aulas
+conteudo/praticas.js   👈 as micropráticas de cinco minutos
+ferramentas/           checagem musical das micropráticas (node)
 ```
 
 ---
 
+## Como a tela Hoje funciona
+
+1. Abre e mostra **uma** microprática: título, progressão, o que ela muda no som.
+2. "Começar prática" conduz passo a passo, um de cada vez, com as cifras
+   tocáveis e um teclado mostrando onde ficam os dedos.
+3. No fim pergunta: **você realmente praticou isso no teclado?**
+   - *Não pratiquei*: nada muda. A mesma prática continua esperando, sem cobrança.
+   - *Sim, pratiquei*: registra, e aparece **✓ Feito por hoje** com o botão
+     principal **Encerrar**. "Quero fazer mais uma" fica pequeno, do lado.
+4. O "como foi?" (🙂 😐 😣) é um clique e altera o que vem depois: *travei*
+   repete a mesma; *ainda estranho* traz o mesmo som em outra progressão;
+   *saiu legal* segue adiante.
+
+Cinco minutos contam como sessão completa. O aplicativo nunca sugere o contrário.
+
+### Regra de escolha da próxima
+
+Em ordem: reforço do que ficou estranho ontem → reencontro discreto de algo
+antigo (uma a cada quatro sessões) → a próxima da fila curada em
+`conteudo/praticas.js` → a menos praticada, quando o conteúdo novo acabar.
+
+A ordem do array `MICROPRATICAS` é a fila, e ela segue resultado musical, não a
+ordem teórica da apostila. Uma prática só entra quando o que ela pressupõe
+(`depende`) já foi feito pelo menos uma vez.
+
+Tudo fica em `localStorage`, na chave `hp-treinador`. Para começar do zero:
+`Treinador.apagarTudo()` no console.
+
+---
+
+## Escrever uma microprática nova
+
+Em `conteudo/praticas.js`. Um **chunk** é um som; uma **microprática** é um jeito
+de colocar esse som debaixo dos dedos hoje.
+
+```js
+{
+  id: 'mp-g2b-tocar',
+  chunkId: 'a1-g2b',
+  titulo: 'Deixar o G2/B na mão',
+  duracao: 5,
+  tipo: 'tocar',              // tocar | ouvir | video | musica
+  tom: 'G',                   // opcional: transpõe a prática inteira
+  aprende: 'Automatizar {C} → {G2/B} → {Am} até a mão achar sozinha.',
+  antes: ['C', 'G/B', 'Am'],  // opcional: o par que aparece no cartão
+  depois: ['C', 'G2/B', 'Am'],
+  depende: ['mp-g2b-ouvir'],
+  passos: [
+    {
+      texto: 'Agora faça somente:',
+      linhas: [{ rotulo: 'depois', acordes: ['C', 'G2/B', 'Am'] }],
+      nota: 'Repita algumas vezes. Não acrescente nenhuma outra técnica.'
+    }
+  ],
+  criterio: 'Três voltas seguidas sem consultar a cifra.'
+}
+```
+
+As cifras se escrevem **sempre em dó**; `tom` transpõe na hora de mostrar. Dá
+para mandar o voicing exato (`{ cifra: 'C', notas: ['C4','G4','E5'] }`), separar
+as mãos (`esquerda`, `direita`) ou pedir um poliacorde (`{ lh: 'Dm', rh: 'C' }`).
+
+Um passo pode ainda trazer:
+
+- `video: { inicio: 236, fim: 268 }`: abre o trecho da aula para copiar o
+  professor antes de entender. O vídeo vem da aula do chunk.
+- `musica: true`: botão que leva ao buscador de cifras da biblioteca.
+
+`criterio` fica guardado no dado e **não** vira cobrança na tela: a prática
+termina quando os cinco minutos terminam.
+
+Três regras ao escrever:
+
+1. Uma microprática, uma vitória. Se couber duas técnicas, são duas práticas.
+2. Um conceito rende vários dias: ouvir, automatizar, usar numa progressão
+   maior, levar para outro tom, aplicar numa música.
+3. Som primeiro, explicação depois.
+
+---
+
+
 ## Aplicar numa música
 
-No fim de cada aula tem a seção **Aplicar numa música**. Busque qualquer música,
+Na biblioteca, no fim de cada aula, tem a seção **Aplicar numa música**. Busque qualquer música,
 escolha um conceito da aula e o caderno marca, acorde por acorde, onde ele cabe,
 com a sugestão pronta. O tom da música é independente do tom da página.
 
@@ -73,13 +165,13 @@ sem passar pelo Jekyll.
 ### Atualizar depois
 
 `git push` na `main` e pronto. Em cerca de um minuto o site está no ar com a
-mudança. Na prática, só o `conteudo/aulas.js` muda.
+mudança. Na prática, só `conteudo/aulas.js` e `conteudo/praticas.js` mudam.
 
 ---
 
 ## Adicionar uma aula nova
 
-Todo o conteúdo vive em `conteudo/aulas.js`. Cada aula é um objeto com uma lista de
+Todo o conteúdo de estudo vive em `conteudo/aulas.js`. Cada aula é um objeto com uma lista de
 **blocos**. Substitua o placeholder da aula pelo conteúdo:
 
 ```js

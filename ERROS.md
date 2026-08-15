@@ -33,9 +33,18 @@ transpostos pelo tom da página além do tom da própria música. Só aparecia c
 a página fora de dó. Causa raiz: reutilizar `vozesDe` sem revisar o que ela
 assume do contexto.
 
+**Verificador acusando a própria aula (G2/B como "baixo estranho ao
+acorde").** A primeira versão de `ferramentas/verificar-praticas.js` exigia que
+o baixo fosse nota do acorde. Isso reprova justamente a forma de sus2 da aula:
+em C2/E, F2/A e G2/B a tríade suspensa fica sobre um baixo uma terça maior
+abaixo. Causa raiz: escrever a regra do verificador sem rodar antes nos
+exemplos literais da aula. A checagem certa é choque real (segunda menor entre
+vozes, nona menor contra o baixo), não parentesco do baixo.
+
 **Fora da música: trailer de co-autoria quebrou o deploy do Netlify; rótulos
-longos sobrepostos na cifra; HTML de tablatura vazando como texto.** Todos
-pegos por print do usuário ou captura de tela, nunca pelo console.
+longos sobrepostos na cifra; HTML de tablatura vazando como texto; foco
+automático no campo de busca jogando a aula inteira para o rodapé ao abrir.**
+Todos pegos por print do usuário ou captura de tela, nunca pelo console.
 
 ## Checagem antes de publicar qualquer detector ou sugestão musical
 
@@ -57,7 +66,11 @@ pegos por print do usuário ou captura de tela, nunca pelo console.
    B# ou E# em cifra.
 7. **Na dúvida, não marcar.** Dica errada é pior que dica nenhuma; o detector
    devolve null e segue.
-8. **Rodar os testes de tortura** (progressão com todos os graus, inversões e
+8. **Micropráticas.** Toda progressão nova em `conteudo/praticas.js` passa por
+   `node ferramentas/verificar-praticas.js` (diatonia no tom em que vai
+   aparecer, grafia, choque contra o baixo, ordem da fila). O verificador não
+   substitui tocar: ele só barra o erro grosseiro.
+9. **Rodar os testes de tortura** (progressão com todos os graus, inversões e
    emprestados, nos scripts de verificação) e conferir a saída contra os
    exemplos literais de `conteudo/aulas.js`. Atenção: o verificador de
    diatonia lê a sugestão como texto e acusa falso positivo em nome de nota
