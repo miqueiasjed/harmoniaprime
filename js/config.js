@@ -20,7 +20,7 @@
     supabaseKey: 'sb_publishable_OrtihqWcv8NeSQxb86VQNQ_EqFNzQlm',
 
     // Google Cloud · Credentials › OAuth client ID (Web application)
-    googleClientId: ''
+    googleClientId: '457643745594-eitl775f80mi0dthhor8plki8r8i8sk1.apps.googleusercontent.com'
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);
