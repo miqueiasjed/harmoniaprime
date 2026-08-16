@@ -144,28 +144,31 @@ que ensina conceito novo ganha um detector novo ali.
 
 ---
 
-## Publicar no GitHub Pages
+## Onde o site fica no ar
 
-O repositório já está no GitHub em `miqueiasjed/harmoniaprime` e o `index.html`
-fica na raiz, que é de onde o Pages serve. Falta ligar o Pages, uma vez só:
+**Vercel (endereço principal):** <https://harmonia-jade-omega.vercel.app>
 
-1. Deixe o repositório **público**. O GitHub Pages em repositório privado exige
-   plano pago. Em **Settings → General**, lá embaixo em *Danger Zone*, use
-   **Change repository visibility**.
-2. Em **Settings → Pages**, no campo *Source*, escolha **Deploy from a branch**.
-   Branch `main`, pasta `/ (root)`. Salve.
-3. Espere cerca de um minuto. O site fica em
-   `https://miqueiasjed.github.io/harmoniaprime/`.
+O projeto está ligado ao repositório `miqueiasjed/harmoniaprime`. Todo `git
+push` na `main` publica sozinho, em cerca de um minuto. Não tem build: a Vercel
+serve os arquivos da raiz como estão (preset *Other*).
 
-Abra esse endereço no celular e adicione à tela de início: funciona como app.
+O `.vercelignore` mantém fora do ar o que é ferramenta de quem escreve o
+conteúdo: `.claude/`, `ferramentas/`, `ERROS.md` e `README.md`.
 
-O arquivo vazio `.nojekyll` na raiz faz o Pages servir os arquivos como estão,
-sem passar pelo Jekyll.
+**GitHub Pages (endereço antigo):** <https://miqueiasjed.github.io/harmoniaprime/>
 
-### Atualizar depois
+Serve a mesma `main` e continua funcionando. Use um endereço só: o histórico de
+prática mora no `localStorage`, que é preso à origem, então marcar uma prática
+em um dos dois endereços não aparece no outro.
 
-`git push` na `main` e pronto. Em cerca de um minuto o site está no ar com a
-mudança. Na prática, só `conteudo/aulas.js` e `conteudo/praticas.js` mudam.
+O arquivo vazio `.nojekyll` na raiz é do Pages, para servir os arquivos sem
+passar pelo Jekyll.
+
+### No celular
+
+Abra o endereço e adicione à tela de início. Além de virar app, o Safari do
+iPhone apaga dados de sites que ficam sete dias sem uso; instalado na tela de
+início, o histórico de prática não cai nessa regra.
 
 ---
 
