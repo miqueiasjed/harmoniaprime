@@ -171,7 +171,34 @@ var MICROPRATICAS = [
     criterio: 'As três trocas dentro do pulso, sem reajustar a mão direita.'
   },
 
-  /* ---------- 2. a cor do sus2 ---------- */
+  /* ---------- 2. sensação ---------- */
+
+  {
+    id: 'mp-sensacao',
+    chunkId: 'a1-sensacao',
+    titulo: 'A sensação antes do nome',
+    duracao: 5,
+    tipo: 'ouvir',
+    aprende: 'Recuperar a cor do acorde direto, sem passar pela etiqueta do nome.',
+    passos: [
+      {
+        texto: 'Toque e espere o som acabar antes de pensar no nome.',
+        linhas: [{ acordes: ['C', 'Am', 'F', 'G'] }]
+      },
+      {
+        texto: 'Diga a sensação em voz alta primeiro: descanso, saudade, expectativa, tensão.',
+        nota: 'Só depois nomeie a cifra.'
+      },
+      {
+        texto: 'Repita fora de ordem, tocando um acorde de cada vez.',
+        linhas: [{ acordes: ['F', 'C', 'G', 'Am'] }],
+        nota: 'Quatro sensações descritas antes de qualquer nome aparecer já basta por hoje.'
+      }
+    ],
+    criterio: 'Quatro sensações diferentes descritas antes de qualquer nome.'
+  },
+
+  /* ---------- 3. a cor do sus2 ---------- */
 
   {
     id: 'mp-g2b-ouvir',
@@ -266,7 +293,7 @@ var MICROPRATICAS = [
     criterio: 'A volta emendada três vezes sem parar entre o F e o C.'
   },
 
-  /* ---------- 3. a parada ---------- */
+  /* ---------- 4. a parada ---------- */
 
   {
     id: 'mp-v4-parada',
@@ -301,7 +328,7 @@ var MICROPRATICAS = [
     criterio: 'Segurar o sus4 sem pressa e resolver dentro do tempo.'
   },
 
-  /* ---------- 4. o baixo que não sai do lugar ---------- */
+  /* ---------- 5. o baixo que não sai do lugar ---------- */
 
   {
     id: 'mp-pedal',
@@ -331,7 +358,7 @@ var MICROPRATICAS = [
     criterio: 'A esquerda não sai do dó durante a volta inteira.'
   },
 
-  /* ---------- 5. copiar o professor ---------- */
+  /* ---------- 6. copiar o professor ---------- */
 
   {
     id: 'mp-video-sus2',
@@ -364,7 +391,7 @@ var MICROPRATICAS = [
     criterio: 'Reproduzir o trecho de ouvido antes de qualquer explicação.'
   },
 
-  /* ---------- 6. reharmonizar sem mexer na melodia ---------- */
+  /* ---------- 7. reharmonizar sem mexer na melodia ---------- */
 
   {
     id: 'mp-mesmo-baixo',
@@ -395,7 +422,7 @@ var MICROPRATICAS = [
     criterio: 'Dizer as três tríades de cabeça, pela regra, antes de tocar.'
   },
 
-  /* ---------- 7. engordar sem pesar ---------- */
+  /* ---------- 8. engordar sem pesar ---------- */
 
   {
     id: 'mp-dobramento',
@@ -425,7 +452,7 @@ var MICROPRATICAS = [
     criterio: 'Quatro voltas sem perder a nota dobrada.'
   },
 
-  /* ---------- 8. abrir o som ---------- */
+  /* ---------- 9. abrir o som ---------- */
 
   {
     id: 'mp-triade-aberta',
@@ -444,7 +471,7 @@ var MICROPRATICAS = [
           { rotulo: 'fechada', acordes: [{ cifra: 'C', notas: ['C4', 'E4', 'G4'] }] },
           { rotulo: 'aberta', acordes: [{ cifra: 'C', notas: ['C4', 'G4', 'E5'] }] }
         ],
-        nota: 'A terça vira décima. Daí o nome 1 · 5 · 10.'
+        nota: 'A terça vira décima. Daí o nome 1 · 5 · 10. Se a mão não abre tanto, toque 1 e 5 juntos e deixe a 10 cair logo em seguida: soa igual e alcance não é requisito.'
       },
       {
         texto: 'Faça o mesmo em {F} e em {G}.',
@@ -464,7 +491,7 @@ var MICROPRATICAS = [
     criterio: 'As três abertas sem pensar em qual nota sobe.'
   },
 
-  /* ---------- 9. o mesmo som em outra progressão ---------- */
+  /* ---------- 10. o mesmo som em outra progressão ---------- */
 
   {
     id: 'mp-g2b-hino',
@@ -495,7 +522,7 @@ var MICROPRATICAS = [
     criterio: 'A versão invertida saindo antes da escrita, por hábito.'
   },
 
-  /* ---------- 10. levar para a música ---------- */
+  /* ---------- 11. levar para a música ---------- */
 
   {
     id: 'mp-g2b-musica',
@@ -527,7 +554,7 @@ var MICROPRATICAS = [
     criterio: 'Uma música real tocada com a sonoridade nova em pelo menos um ponto.'
   },
 
-  /* ---------- 11. conexões ---------- */
+  /* ---------- 12. conexões ---------- */
 
   {
     id: 'mp-conexao-preparada',
@@ -589,7 +616,7 @@ var MICROPRATICAS = [
     criterio: 'As duas versões de memória, com a escolha feita de ouvido.'
   },
 
-  /* ---------- 12. outro tom ---------- */
+  /* ---------- 13. outro tom ---------- */
 
   {
     id: 'mp-g2b-outro-tom',
@@ -620,7 +647,7 @@ var MICROPRATICAS = [
     criterio: 'A progressão inteira no tom novo, sem traduzir mentalmente a partir de dó.'
   },
 
-  /* ---------- 13. o refrão que levanta ---------- */
+  /* ---------- 14. o refrão que levanta ---------- */
 
   {
     id: 'mp-refrao-aberto',
@@ -646,7 +673,7 @@ var MICROPRATICAS = [
             { cifra: 'G', esquerda: ['G3', 'D4', 'B4'] }
           ]
         }],
-        nota: 'A esquerda sozinha já entrega o acorde. A direita não precisa repetir.'
+        nota: 'A esquerda sozinha já entrega o acorde. A direita não precisa repetir. Décima que não alcança, quebra: 1 e 5 juntos, a 10 atrás.'
       },
       {
         texto: 'Três voltas, procurando não fechar a mão direita.',
@@ -656,7 +683,7 @@ var MICROPRATICAS = [
     criterio: 'Quatro compassos com a esquerda aberta e a direita solta.'
   },
 
-  /* ---------- 14. poliacorde ---------- */
+  /* ---------- 15. poliacorde ---------- */
 
   {
     id: 'mp-poliacorde',
@@ -684,34 +711,6 @@ var MICROPRATICAS = [
       }
     ],
     criterio: 'Os dois poliacordes deduzidos pela regra, sem consultar tabela.'
-  },
-
-  /* ---------- 15. sensação ---------- */
-
-  {
-    id: 'mp-sensacao',
-    chunkId: 'a1-sensacao',
-    titulo: 'A sensação antes do nome',
-    duracao: 5,
-    tipo: 'ouvir',
-    aprende: 'Recuperar a cor do acorde direto, sem passar pela etiqueta do nome.',
-    depende: ['mp-poliacorde'],
-    passos: [
-      {
-        texto: 'Toque e espere o som acabar antes de pensar no nome.',
-        linhas: [{ acordes: ['C', 'Am', 'F', 'G'] }]
-      },
-      {
-        texto: 'Diga a sensação em voz alta primeiro: descanso, saudade, expectativa, tensão.',
-        nota: 'Só depois nomeie a cifra.'
-      },
-      {
-        texto: 'Repita fora de ordem, tocando um acorde de cada vez.',
-        linhas: [{ acordes: ['F', 'C', 'G', 'Am'] }],
-        nota: 'Quatro sensações descritas antes de qualquer nome aparecer já basta por hoje.'
-      }
-    ],
-    criterio: 'Quatro sensações diferentes descritas antes de qualquer nome.'
   }
 ];
 

@@ -98,23 +98,29 @@
     var primeiro = null;
     var chips = [];
 
-    function mostrar(item) {
+    // as vozes de todas as linhas primeiro: assim o teclado do visor tem uma
+    // moldura só e a mão vê a nota se mover, em vez de o teclado inteiro pular
+    var vozesPorLinha = linhas.map(function (l) { return HP.vozesDaLinha(l.acordes || [], tom); });
+    var janela = HP.janelaDaLinha([].concat.apply([], vozesPorLinha));
+
+    function mostrar(item, vozes) {
       visor.innerHTML = '';
-      visor.appendChild(HP.tecladoDe(item, { tom: tom }));
+      visor.appendChild(HP.tecladoDe(item, { tom: tom, vozes: vozes, preferido: janela }));
     }
 
-    linhas.forEach(function (l) {
+    linhas.forEach(function (l, iLinha) {
       var itens = (l.acordes || []).map(itemDe);
       if (!itens.length) return;
-      if (!primeiro) primeiro = itens[0];
+      var vozes = vozesPorLinha[iLinha];
+      if (!primeiro) primeiro = { item: itens[0], vozes: vozes[0] };
       if (l.rotulo) caixa.appendChild(criar('span', 'pp-rotulo', l.rotulo));
-      var linha = HP.linhaCifras(l.acordes, 54, tom);
+      var linha = HP.linhaCifras(l.acordes, 54, tom, { vozes: vozes, preferido: janela });
       Array.prototype.forEach.call(linha.querySelectorAll('.chip'), function (c, i) {
         chips.push(c);
         c.addEventListener('click', function () {
           c.classList.remove('oculto');            // travou, revela essa e segue
           caixa.classList.remove('escondido');
-          mostrar(itens[i]);
+          mostrar(itens[i], vozes[i]);
         });
       });
       caixa.appendChild(linha);
@@ -122,7 +128,7 @@
 
     if (!primeiro) return caixa;
     caixa.appendChild(visor);
-    mostrar(primeiro);
+    mostrar(primeiro.item, primeiro.vozes);
 
     // esconder é opcional e reversível: ninguém falha por olhar a cifra
     var alternar = criar('button', 'pp-esconder', 'esconder as cifras');
@@ -140,9 +146,11 @@
   /** Só as cifras, sem teclado: para o cartão da home. */
   function tira(acordes, tom, classe) {
     var caixa = criar('div', classe || 'pp-tira');
+    var vozes = HP.vozesDaLinha(acordes, tom);
+    var janela = HP.janelaDaLinha(vozes);
     acordes.forEach(function (a, i) {
       var it = itemDe(a);
-      caixa.appendChild(HP.cifraChip(it, null, tom));
+      caixa.appendChild(HP.cifraChip(it, null, tom, { vozes: vozes[i], preferido: janela }));
       if (i < acordes.length - 1) caixa.appendChild(criar('span', 'pp-seta', '→'));
     });
     return caixa;

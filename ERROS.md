@@ -41,6 +41,18 @@ abaixo. Causa raiz: escrever a regra do verificador sem rodar antes nos
 exemplos literais da aula. A checagem certa é choque real (segunda menor entre
 vozes, nona menor contra o baixo), não parentesco do baixo.
 
+**Teclado ensinando o contrário do texto (voicing acorde a acorde).** A tela
+de prática vozeava cada cifra sozinha. Em `C → G/B → Am`, cuja nota diz "a mão
+direita pode ficar praticamente parada", a direita saltava de C4-E4-G4 para
+B4-D5-G5: nenhuma nota permanecia. Pior, `vozes()` só põe nota na esquerda
+quando a cifra traz barra, então `mp-pedal` ("a esquerda não sai do dó")
+desenhava a esquerda vazia em três dos quatro acordes. Causa raiz: `vozesLigadas`
+existia e estava em uso só na biblioteca; a tela onde o aluno põe a mão ficou
+com a versão pior. Pego lendo o conteúdo contra o que o teclado acende, nunca
+pelo console. A checagem que pega isso: comparar as pitch classes antes e
+depois (têm que ser idênticas, só a oitava muda) e conferir que todo acorde de
+uma progressão simples tem baixo na esquerda.
+
 **Fora da música: trailer de co-autoria quebrou o deploy do Netlify; rótulos
 longos sobrepostos na cifra; HTML de tablatura vazando como texto; foco
 automático no campo de busca jogando a aula inteira para o rodapé ao abrir.**

@@ -73,26 +73,70 @@
     return v;
   }
 
-  function tocarItem(item, tom) {
-    var v = vozesDe(item, tom);
+  function tocarItem(item, tom, vozes) {
+    var v = vozes || vozesDe(item, tom);
     M.tocarNotas(v.esquerda.concat(v.direita), { duracao: 2.2 });
+  }
+
+  /* ---------- vozes de uma progressão inteira ---------- */
+
+  function itemDe(x) { return typeof x === 'string' ? { cifra: x } : x; }
+
+  /** Voicing escrito à mão no conteúdo manda; o resto o app conduz. */
+  function voicingProprio(it) {
+    return !!(it.notas || it.esquerda || it.direita || (it.lh && it.rh));
+  }
+
+  /**
+   * Vozeado acorde a acorde, C → G/B → Am pula de oitava no meio do
+   * caminho, que é exatamente o contrário do que a microprática manda
+   * fazer ("a direita fica parada, quem muda é o baixo"). Aqui a linha
+   * inteira é vozeada junto: as vozes andam pelo caminho curto e o baixo
+   * aparece na esquerda mesmo quando a cifra não traz barra.
+   *
+   * Basta um acorde com voicing próprio ou vindo da seção de música para
+   * a linha inteira voltar ao vozeamento individual, sem meio-termo.
+   */
+  function vozesDaLinha(itens, tom) {
+    var lista = (itens || []).map(itemDe);
+    var conduzir = lista.length && lista.every(function (it) {
+      return it.cifra && !it.absoluto && !voicingProprio(it);
+    });
+    if (!conduzir) return lista.map(function (it) { return vozesDe(it, tom); });
+
+    var ligadas = M.vozesLigadas(lista.map(function (it) { return it.cifra; }), semitons(tom));
+    return ligadas.map(function (v, i) {
+      return v.direita.length ? v : vozesDe(lista[i], tom);
+    });
+  }
+
+  /** Um teclado só para a progressão toda: as teclas se movem, a moldura não. */
+  function janelaDaLinha(vozes) {
+    var todas = [];
+    (vozes || []).forEach(function (v) { todas = todas.concat(v.esquerda, v.direita); });
+    if (!todas.length) return { inicio: PISO, fim: TETO };
+    var min = Math.min.apply(null, todas), max = Math.max.apply(null, todas);
+    return {
+      inicio: min < PISO ? Math.floor(min / 12) * 12 : PISO,
+      fim: max > TETO ? max : TETO
+    };
   }
 
   /* ---------- componentes ---------- */
 
-  function cifraChip(item, extra, tom) {
-    var it = typeof item === 'string' ? { cifra: item } : item;
+  function cifraChip(item, extra, tom, ctx) {
+    var it = itemDe(item);
     var rotulo = it.cifra ? tt(it.cifra, tom) : tt(it.lh, tom) + ' + ' + tt(it.rh, tom);
     var b = criar('button', 'chip' + (extra ? ' ' + extra : ''));
     b.type = 'button';
     b.innerHTML = '<span class="chip-cifra">' + rotulo + '</span>';
     b.setAttribute('aria-label', 'Tocar ' + rotulo);
     b.addEventListener('click', function () {
-      tocarItem(it, tom);
+      tocarItem(it, tom, ctx && ctx.vozes);
       b.classList.add('ativo');
       setTimeout(function () { b.classList.remove('ativo'); }, 420);
     });
-    espiar(b, it, tom);
+    espiar(b, it, tom, ctx);
     return b;
   }
 
@@ -115,14 +159,14 @@
     return espia.caixa;
   }
 
-  function abrirEspia(botao, item, tom) {
+  function abrirEspia(botao, item, tom, ctx) {
     var c = caixaEspia();
     c.innerHTML = '';
     var cab = criar('div', 'espia-cabecalho');
     var rotuloEspia = item.cifra || (item.lh + ' + ' + item.rh);
     cab.appendChild(criar('span', 'espia-cifra', item.absoluto ? rotuloEspia : tt(rotuloEspia, tom)));
     var bemolEspia = item.absoluto ? !!item.bemol : tomAtual(tom).bemol;
-    var v = vozesDe(item, tom);
+    var v = (ctx && ctx.vozes) || vozesDe(item, tom);
     var vistos = {}, nomes = [];
     v.esquerda.concat(v.direita).forEach(function (m) {
       var n = M.midiParaNota(m, bemolEspia).replace(/\d+$/, '');
@@ -130,7 +174,11 @@
     });
     cab.appendChild(criar('span', 'espia-notas', nomes.join(' · ')));
     c.appendChild(cab);
-    c.appendChild(tecladoDe(item, { tom: tom }));
+    c.appendChild(tecladoDe(item, {
+      tom: tom,
+      vozes: ctx && ctx.vozes,
+      preferido: ctx && ctx.preferido
+    }));
     c.classList.add('visivel');
 
     var r = botao.getBoundingClientRect();
@@ -154,12 +202,12 @@
   }
 
   /** Liga o preview de teclado a qualquer botão de cifra da página. */
-  function espiar(botao, item, tom) {
+  function espiar(botao, item, tom, ctx) {
     if (!item || (!item.cifra && !item.lh)) return;
     function abrir() {
       clearTimeout(espia.saida);
       clearTimeout(espia.timer);
-      espia.timer = setTimeout(function () { abrirEspia(botao, item, tom); }, 110);
+      espia.timer = setTimeout(function () { abrirEspia(botao, item, tom, ctx); }, 110);
     }
     function fechar() {
       clearTimeout(espia.timer);
@@ -168,20 +216,20 @@
     }
     botao.addEventListener('mouseenter', abrir);
     botao.addEventListener('mouseleave', fechar);
-    botao.addEventListener('focus', function () { abrirEspia(botao, item, tom); });
+    botao.addEventListener('focus', function () { abrirEspia(botao, item, tom, ctx); });
     botao.addEventListener('blur', fecharEspia);
     // no celular não existe hover: o toque toca, mostra e deixa fixado
     botao.addEventListener('click', function () {
       clearTimeout(espia.saida);
       espia.fixado = (espia.ponteiro === 'touch');
-      abrirEspia(botao, item, tom);
+      abrirEspia(botao, item, tom, ctx);
     });
   }
 
   function tecladoDe(item, opcoes) {
     opcoes = opcoes || {};
     var caixa = criar('div', 'caixa-teclado');
-    var v = vozesDe(item, opcoes.tom);
+    var v = opcoes.vozes || vozesDe(item, opcoes.tom);
     var marc = null;
     if (item.marcadores) {
       marc = item.marcadores.map(function (mk) {
@@ -194,7 +242,7 @@
       marcadores: marc,
       bemol: item.absoluto ? !!item.bemol : tomAtual(opcoes.tom).bemol,
       rotulos: opcoes.rotulos !== false,
-      preferido: { inicio: PISO, fim: TETO }
+      preferido: opcoes.preferido || { inicio: PISO, fim: TETO }
     });
     return caixa;
   }
@@ -632,11 +680,13 @@
     return sec;
   };
 
-  function linhaCifras(acordes, bpm, tom) {
+  function linhaCifras(acordes, bpm, tom, ctxLinha) {
     var caixa = criar('div', 'linha-cifras');
     var chips = [];
+    var vozes = (ctxLinha && ctxLinha.vozes) || vozesDaLinha(acordes, tom);
+    var preferido = (ctxLinha && ctxLinha.preferido) || janelaDaLinha(vozes);
     acordes.forEach(function (c, i) {
-      var b = cifraChip(c, null, tom);
+      var b = cifraChip(c, null, tom, { vozes: vozes[i], preferido: preferido });
       chips.push(b);
       caixa.appendChild(b);
       if (i < acordes.length - 1) caixa.appendChild(criar('span', 'seta-seq', '→'));
@@ -645,8 +695,7 @@
     btn.type = 'button';
     btn.setAttribute('aria-label', 'Tocar a sequência');
     btn.addEventListener('click', function () {
-      M.tocarSequencia(acordes.map(function (c) {
-        var v = vozesDe(typeof c === 'string' ? { cifra: c } : c, tom);
+      M.tocarSequencia(vozes.map(function (v) {
         return v.esquerda.concat(v.direita);
       }), {
         bpm: bpm || 54,
@@ -1680,6 +1729,8 @@
     cifraChip: cifraChip,
     linhaCifras: linhaCifras,
     vozesDe: vozesDe,
+    vozesDaLinha: vozesDaLinha,
+    janelaDaLinha: janelaDaLinha,
     abrirVideo: abrirVideo,
     relogio: relogio,
     irParaHoje: irParaHoje,
