@@ -172,6 +172,73 @@ início, o histórico de prática não cai nessa regra.
 
 ---
 
+## Sincronizar entre aparelhos
+
+O `localStorage` é preso ao aparelho: praticar no celular não aparece no
+computador. Quem resolve isso é uma tabela no Supabase, com entrada pelo Google.
+
+O app **continua abrindo e funcionando sem nada disso**. Enquanto
+`js/config.js` estiver vazio, o botão de sincronizar nem aparece e o navegador
+segue sendo o único lugar onde o histórico mora.
+
+### Como o histórico se junta
+
+O navegador continua sendo a fonte de leitura: a tela nunca espera resposta de
+servidor para aparecer, e praticar sem internet funciona. A nuvem é espelho.
+
+Ao entrar, o que está no aparelho e o que está no servidor são **mesclados**,
+nunca sobrescritos. Isso é possível porque o histórico é um log de sessões
+carimbadas com a hora: juntar dois aparelhos é unir dois conjuntos, e os
+contadores de cada microprática saem recalculados desse log. Praticar no
+celular no avião e depois abrir o computador soma as duas coisas.
+
+Depois disso, cada prática registrada sobe sozinha dois segundos depois, e
+também quando o app vai para segundo plano.
+
+### Ligar (uma vez só)
+
+**1. Supabase.** Crie um projeto e rode `sql/001_progresso.sql` no SQL Editor.
+Ele cria a tabela `progresso` com Row Level Security: cada pessoa só enxerga a
+própria linha.
+
+**2. Google Cloud Console** → *APIs & Services* → *Credentials* → *Create
+credentials* → *OAuth client ID* → *Web application*:
+
+- *Authorized JavaScript origins*: `https://harmonia-jade-omega.vercel.app` e
+  `http://localhost:8899`
+- *Authorized redirect URIs*: `https://SEU-REF.supabase.co/auth/v1/callback`
+
+Guarde o **Client ID** e o **Client Secret**.
+
+**3. Supabase** → *Authentication* → *Sign In / Providers* → *Google*: ligue,
+cole o Client ID e o Client Secret. No campo **Authorized Client IDs** cole o
+mesmo Client ID (é o que libera a entrada sem sair da página).
+
+**4. `js/config.js`**: preencha `supabaseUrl`, `supabaseKey` (a publishable
+key, em *Project Settings › Data API*) e `googleClientId`.
+
+A publishable key é pública por natureza e pode ficar no repositório: quem
+protege os dados é a RLS da tabela. O **client secret do Google não entra no
+código**, ele fica só no painel do Supabase.
+
+### Por que a entrada do Google não usa redirect
+
+No iPhone, um app aberto pela tela de início que sai da página para logar
+costuma voltar dentro do Safari, e a sessão fica no lugar errado. A entrada usa
+Google Identity Services, que resolve tudo na mesma página. Se ele não carregar
+por algum motivo, o código cai para o redirect comum sozinho.
+
+### Arquivos
+
+| arquivo | papel |
+| --- | --- |
+| `js/config.js` | as três chaves; vazio desliga tudo |
+| `js/nuvem.js` | entrada com Google, sincronização, envio adiado |
+| `sql/001_progresso.sql` | tabela, RLS e gatilho de data |
+| `js/treinador.js` | `exportar`, `importar` e `mesclar` |
+
+---
+
 ## Adicionar uma aula nova
 
 Todo o conteúdo de estudo vive em `conteudo/aulas.js`. Cada aula é um objeto com uma lista de

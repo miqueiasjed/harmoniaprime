@@ -1630,6 +1630,8 @@
     renderMenu();
     rotear(location.hash);
 
+    if (global.Hoje && global.Hoje.ligarNuvem) global.Hoje.ligarNuvem();
+
     Array.prototype.forEach.call(document.querySelectorAll('[data-ir="hoje"]'), function (b) {
       b.addEventListener('click', function (ev) { ev.preventDefault(); irParaHoje(); });
     });

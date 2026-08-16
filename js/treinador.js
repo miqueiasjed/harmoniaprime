@@ -31,6 +31,7 @@
   }
 
   var cache = null;
+  var ouvinte = null;   // a nuvem escuta aqui para saber que tem coisa nova a subir
 
   function ler() {
     if (cache) return cache;
@@ -43,8 +44,13 @@
     return cache;
   }
 
-  function gravar() {
+  function guardar() {
     try { localStorage.setItem(CHAVE, JSON.stringify(cache)); } catch (e) { /* modo privado */ }
+  }
+
+  function gravar() {
+    guardar();
+    if (ouvinte) ouvinte();
   }
 
   /* ---------- datas ---------- */
@@ -337,6 +343,94 @@
     gravar();
   }
 
+  /* ---------- sincronização entre aparelhos ---------- */
+
+  /**
+   * O histórico é um log de sessões carimbadas com a hora. Isso torna a
+   * junção de dois aparelhos uma união de conjuntos, sem escolher um lado
+   * nem perder prática de ninguém: os contadores saem recalculados do log.
+   */
+
+  function exportar() {
+    return JSON.parse(JSON.stringify(ler()));
+  }
+
+  /** Grava vindo de fora sem avisar a nuvem de volta, senão vira eco. */
+  function importar(estado) {
+    if (!estado || !estado.versao) return;
+    cache = estado;
+    guardar();
+  }
+
+  function recomputar(st) {
+    st.praticas = {};
+    st.chunks = {};
+    st.sessoes.forEach(function (s) {
+      if (!s.praticou) return;
+      var p = pratica(s.praticaId);
+      var chunkId = s.chunkId || (p && p.chunkId);
+
+      var rp = st.praticas[s.praticaId] || { vezes: 0, ultima: null, feedback: null };
+      rp.vezes++;
+      rp.ultima = s.data;
+      if (s.feedback) rp.feedback = s.feedback;
+      st.praticas[s.praticaId] = rp;
+
+      if (!chunkId) return;
+      var rc = st.chunks[chunkId] || { vezes: 0, ultima: null, feedback: null };
+      rc.vezes++;
+      rc.ultima = s.data;
+      if (s.feedback) rc.feedback = s.feedback;
+      st.chunks[chunkId] = rc;
+    });
+  }
+
+  function mesclar(local, remoto) {
+    if (!remoto || !remoto.versao) return local;
+    if (!local || !local.versao) return remoto;
+
+    var st = vazio();
+    var vistas = {};
+
+    local.sessoes.concat(remoto.sessoes).forEach(function (s) {
+      if (!s || !s.data) return;
+      var k = s.praticaId + '|' + s.data;
+      if (vistas[k]) {
+        // a mesma sessão nos dois lados: o feedback anotado depois prevalece
+        if (!vistas[k].feedback && s.feedback) vistas[k].feedback = s.feedback;
+        return;
+      }
+      vistas[k] = s;
+      st.sessoes.push(s);
+    });
+
+    st.sessoes.sort(function (a, b) { return a.data < b.data ? -1 : (a.data > b.data ? 1 : 0); });
+    if (st.sessoes.length > 400) st.sessoes = st.sessoes.slice(-400);
+
+    recomputar(st);
+
+    st.encerrado = [local.encerrado, remoto.encerrado]
+      .filter(Boolean).sort().pop() || null;
+
+    // a prática travada é a do aparelho que mexeu por último, e some se
+    // qualquer um dos dois já a registrou depois de ela ter sido escolhida
+    var a = local.atual, b = remoto.atual;
+    var esc = (a && b) ? (a.desde >= b.desde ? a : b) : (a || b);
+    if (esc) {
+      var praticouDepois = st.sessoes.some(function (s) {
+        return s.praticou && s.data > esc.desde;
+      });
+      if (!praticouDepois) st.atual = esc;
+    }
+
+    return st;
+  }
+
+  /** A nuvem chama isto para saber quando existe coisa nova a subir. */
+  function escutar(fn) {
+    ouvinte = fn;
+  }
+
   global.Treinador = {
     hoje: hoje,
     registrar: registrar,
@@ -349,7 +443,11 @@
     estadoDoChunk: estadoDoChunk,
     pratica: pratica,
     chunk: chunk,
-    apagarTudo: apagarTudo
+    apagarTudo: apagarTudo,
+    exportar: exportar,
+    importar: importar,
+    mesclar: mesclar,
+    escutar: escutar
   };
 
 })(typeof window !== 'undefined' ? window : globalThis);

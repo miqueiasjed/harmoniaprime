@@ -1368,6 +1368,36 @@ body.video-aberto { overflow: hidden; }
 }
 .hoje-cartao.centro .hoje-nota { border-top: 0; padding-top: 0; }
 
+/* ---------- sincronização: rodapé, nunca porta de entrada ---------- */
+
+.hoje-nuvem {
+  margin-top: 18px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.hoje-cartao.centro .hoje-nuvem { align-items: center; }
+
+.hoje-nuvem-selo {
+  font-size: 12px;
+  color: var(--tinta-fraca);
+  letter-spacing: .01em;
+}
+.hoje-nuvem-recado {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--tinta-suave);
+  max-width: 44ch;
+}
+.hoje-nuvem-botao { min-height: 44px; }
+.hoje-nuvem-erro {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #9a3b2f;
+}
+
 /* ---------- passo a passo ---------- */
 
 .hoje-cartao.pratica { align-items: stretch; }

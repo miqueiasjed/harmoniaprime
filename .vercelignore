@@ -1,6 +1,7 @@
 # O que não precisa ir para o ar. O site é a raiz: index.html, css, js, conteudo.
 .claude
 ferramentas
+sql
 ERROS.md
 README.md
 .nojekyll

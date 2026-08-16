@@ -24,6 +24,57 @@
     return b;
   }
 
+  /* ---------- sincronização, no rodapé e em voz baixa ---------- */
+
+  var mostrandoEntrada = false;
+
+  /**
+   * Um app de estudo não pede login na porta. Quem só quer praticar abre e
+   * pratica; isto aqui fica no rodapé para quem quer o mesmo histórico no
+   * celular e no computador.
+   */
+  function caixaNuvem() {
+    var N = global.Nuvem;
+    if (!N) return null;
+    var st = N.estado();
+    if (!st.configurado) return null;
+
+    var cx = criar('div', 'hoje-nuvem');
+
+    if (st.ligado) {
+      cx.appendChild(criar('span', 'hoje-nuvem-selo',
+        st.ocupado ? 'sincronizando…' : 'sincronizado' + (st.email ? ' · ' + st.email : '')));
+      cx.appendChild(botao('hoje-link discreto', 'sair desta conta', function () {
+        N.sair().then(render);
+      }));
+      if (st.erro) cx.appendChild(criar('p', 'hoje-nuvem-erro', st.erro));
+      return cx;
+    }
+
+    if (!mostrandoEntrada) {
+      cx.appendChild(botao('hoje-link discreto', 'sincronizar entre aparelhos', function () {
+        mostrandoEntrada = true;
+        render();
+      }));
+      return cx;
+    }
+
+    cx.appendChild(criar('p', 'hoje-nuvem-recado',
+      'Entre com o Google para levar seu histórico para os outros aparelhos.'));
+    var alvo = criar('div', 'hoje-nuvem-botao');
+    cx.appendChild(alvo);
+    N.montarEntrada(alvo).catch(function (e) {
+      alvo.appendChild(criar('p', 'hoje-nuvem-erro',
+        (e && e.message) ? e.message : 'Não deu para carregar a entrada do Google.'));
+    });
+    cx.appendChild(botao('hoje-link discreto', 'agora não', function () {
+      mostrandoEntrada = false;
+      render();
+    }));
+    if (st.erro) cx.appendChild(criar('p', 'hoje-nuvem-erro', st.erro));
+    return cx;
+  }
+
   function saudacao() {
     var h = new Date().getHours();
     if (h < 6) return 'Boa madrugada.';
@@ -165,6 +216,9 @@
 
     var resumo = global.Treinador.resumoSemana();
     if (resumo) cx.appendChild(criar('p', 'hoje-nota', resumo));
+
+    var nuvem = caixaNuvem();
+    if (nuvem) cx.appendChild(nuvem);
 
     return cx;
   }
@@ -344,6 +398,9 @@
 
     var resumo = global.Treinador.resumoSemana();
     if (resumo) cx.appendChild(criar('p', 'hoje-nota', resumo));
+
+    var nuvem = caixaNuvem();
+    if (nuvem) cx.appendChild(nuvem);
     return cx;
   }
 
@@ -396,6 +453,21 @@
     window.scrollTo(0, 0);
   }
 
-  global.Hoje = { render: render };
+  /**
+   * A nuvem avisa quando chegou histórico de outro aparelho. Redesenhar no
+   * meio de uma prática seria trocar o chão debaixo dos pés, então isso só
+   * acontece nas telas de descanso.
+   */
+  function ligarNuvem() {
+    var N = global.Nuvem;
+    if (!N) return;
+    N.aoMudar(function () {
+      if (vista.nome === 'passos' || vista.nome === 'pergunta') return;
+      render();
+    });
+    N.iniciar();
+  }
+
+  global.Hoje = { render: render, ligarNuvem: ligarNuvem };
 
 })(typeof window !== 'undefined' ? window : globalThis);
