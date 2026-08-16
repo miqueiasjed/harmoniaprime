@@ -146,20 +146,26 @@ que ensina conceito novo ganha um detector novo ali.
 
 ## Onde o site fica no ar
 
-**Vercel (endereço principal):** <https://harmonia-jade-omega.vercel.app>
+**Vercel (endereço principal):** <https://harmoniaprime.vercel.app>
 
-O projeto está ligado ao repositório `miqueiasjed/harmoniaprime`. Todo `git
-push` na `main` publica sozinho, em cerca de um minuto. Não tem build: a Vercel
-serve os arquivos da raiz como estão (preset *Other*).
+O projeto está ligado ao repositório `miqueiasjed/harmoniaprime`, na conta
+`miqueias7`. Todo `git push` na `main` publica sozinho, em cerca de um minuto.
+Não tem build: a Vercel serve os arquivos da raiz como estão (preset *Other*).
 
 O `.vercelignore` mantém fora do ar o que é ferramenta de quem escreve o
-conteúdo: `.claude/`, `ferramentas/`, `ERROS.md` e `README.md`.
+conteúdo: `.claude/`, `ferramentas/`, `sql/`, `ERROS.md` e `README.md`.
 
 **GitHub Pages (endereço antigo):** <https://miqueiasjed.github.io/harmoniaprime/>
 
 Serve a mesma `main` e continua funcionando. Use um endereço só: o histórico de
 prática mora no `localStorage`, que é preso à origem, então marcar uma prática
-em um dos dois endereços não aparece no outro.
+em um dos dois endereços não aparece no outro. Depois que a sincronização
+estiver ligada isso deixa de valer para quem entra com o Google, mas os dois
+endereços precisariam estar liberados no Google Cloud.
+
+Um endereço `*.vercel.app` morre junto com o projeto que o gerou. Se o site
+sumir com `DEPLOYMENT_NOT_FOUND`, o projeto foi recriado e o endereço mudou:
+confira o nome em <https://vercel.com/miqueias7/harmoniaprime>.
 
 O arquivo vazio `.nojekyll` na raiz é do Pages, para servir os arquivos sem
 passar pelo Jekyll.
@@ -204,9 +210,11 @@ própria linha.
 **2. Google Cloud Console** → *APIs & Services* → *Credentials* → *Create
 credentials* → *OAuth client ID* → *Web application*:
 
-- *Authorized JavaScript origins*: `https://harmonia-jade-omega.vercel.app` e
-  `http://localhost:8899`
-- *Authorized redirect URIs*: `https://SEU-REF.supabase.co/auth/v1/callback`
+- *Authorized JavaScript origins*: `https://harmoniaprime.vercel.app` e
+  `http://localhost:8899` (acrescente `https://miqueiasjed.github.io` se for
+  usar o endereço do Pages)
+- *Authorized redirect URIs*:
+  `https://ympcwjzrubpfwovyvyhb.supabase.co/auth/v1/callback`
 
 Guarde o **Client ID** e o **Client Secret**.
 
