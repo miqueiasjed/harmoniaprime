@@ -367,15 +367,15 @@
     caixaFb.appendChild(linha);
     cx.appendChild(caixaFb);
 
-    cx.appendChild(botao('hoje-comecar', 'Encerrar por hoje', function () {
-      global.Treinador.encerrarPorHoje();
-      vista = { nome: 'despedida' };
+    cx.appendChild(botao('hoje-comecar', 'Próxima prática', function () {
+      global.Treinador.maisUma();
+      vista = { nome: 'inicio' };
       render();
     }));
 
-    cx.appendChild(botao('hoje-link discreto', 'quero fazer mais uma', function () {
-      global.Treinador.maisUma();
-      vista = { nome: 'inicio' };
+    cx.appendChild(botao('hoje-link discreto', 'chega por hoje', function () {
+      global.Treinador.encerrarPorHoje();
+      vista = { nome: 'despedida' };
       render();
     }));
 
