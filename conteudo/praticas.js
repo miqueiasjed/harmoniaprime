@@ -165,7 +165,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Três voltas sem olhar para a cifra.',
-        nota: 'Se precisar olhar de novo, tudo bem. A ideia é a mão começar a reconhecer o caminho.'
+        nota: 'Se precisar olhar de novo, tudo bem. A ideia é a mão começar a reconhecer o caminho.',
+        video: { inicio: 1398 }
       }
     ],
     criterio: 'As três trocas dentro do pulso, sem reajustar a mão direita.'
@@ -192,7 +193,8 @@ var MICROPRATICAS = [
       {
         texto: 'Repita fora de ordem, tocando um acorde de cada vez.',
         linhas: [{ acordes: ['F', 'C', 'G', 'Am'] }],
-        nota: 'Quatro sensações descritas antes de qualquer nome aparecer já basta por hoje.'
+        nota: 'Quatro sensações descritas antes de qualquer nome aparecer já basta por hoje.',
+        video: { inicio: 51 }
       }
     ],
     criterio: 'Quatro sensações diferentes descritas antes de qualquer nome.'
@@ -230,7 +232,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Por último, só ouça: toque o par e escolha qual dos dois você quer no seu som.',
-        nota: 'Hoje não precisa decidir nada além disso.'
+        nota: 'Hoje não precisa decidir nada além disso.',
+        video: { inicio: 236 }
       }
     ],
     criterio: 'Descrever a diferença entre os dois em voz alta, sem falar teoria.'
@@ -258,7 +261,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Três voltas sem olhar para a cifra.',
-        nota: 'Se precisar olhar novamente, tudo bem. O objetivo não é testar sua memória.'
+        nota: 'Se precisar olhar novamente, tudo bem. O objetivo não é testar sua memória.',
+        video: { inicio: 236 }
       }
     ],
     criterio: 'Três voltas seguidas sem consultar a cifra.'
@@ -287,7 +291,8 @@ var MICROPRATICAS = [
       {
         texto: 'Três voltas seguidas, emendando o {F} de volta no {C}.',
         linhas: [{ acordes: ['C', 'G2/B', 'Am', 'F'] }],
-        nota: 'É o giro de quase toda música lenta de adoração. Ele volta ao começo sozinho.'
+        nota: 'É o giro de quase toda música lenta de adoração. Ele volta ao começo sozinho.',
+        video: { inicio: 236 }
       }
     ],
     criterio: 'A volta emendada três vezes sem parar entre o F e o C.'
@@ -322,7 +327,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Três voltas sem olhar para a cifra.',
-        nota: 'Só o dedo do meio se mexe na hora de resolver.'
+        nota: 'Só o dedo do meio se mexe na hora de resolver.',
+        video: { inicio: 963 }
       }
     ],
     criterio: 'Segurar o sus4 sem pressa e resolver dentro do tempo.'
@@ -352,7 +358,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Agora arpeje a direita enquanto a esquerda segura.',
-        nota: 'Não precisa de ritmo definido. Deixe soar.'
+        nota: 'Não precisa de ritmo definido. Deixe soar.',
+        video: { inicio: 2387 }
       }
     ],
     criterio: 'A esquerda não sai do dó durante a volta inteira.'
@@ -416,7 +423,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Escolha a que você mais gostou e toque só ela três vezes.',
-        nota: 'Uma cor nova por dia já é bastante.'
+        nota: 'Uma cor nova por dia já é bastante.',
+        video: { inicio: 484 }
       }
     ],
     criterio: 'Dizer as três tríades de cabeça, pela regra, antes de tocar.'
@@ -446,7 +454,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Duas voltas em bloco e duas arpejadas.',
-        nota: 'A nota dobrada é o que deixa o arpejo com o que segurar.'
+        nota: 'A nota dobrada é o que deixa o arpejo com o que segurar.',
+        video: { inicio: 661 }
       }
     ],
     criterio: 'Quatro voltas sem perder a nota dobrada.'
@@ -485,7 +494,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Agora só a esquerda em 1 · 5 · 10, com a direita improvisando por cima.',
-        nota: 'Duas ou três notas na direita bastam. A esquerda já disse qual é o acorde.'
+        nota: 'Duas ou três notas na direita bastam. A esquerda já disse qual é o acorde.',
+        video: { inicio: 2047 }
       }
     ],
     criterio: 'As três abertas sem pensar em qual nota sobe.'
@@ -516,7 +526,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Três voltas na segunda versão, devagar.',
-        nota: 'Serve em qualquer hino que termine em I → IV → I → V → I.'
+        nota: 'Serve em qualquer hino que termine em I → IV → I → V → I.',
+        video: { inicio: 1398 }
       }
     ],
     criterio: 'A versão invertida saindo antes da escrita, por hábito.'
@@ -579,7 +590,8 @@ var MICROPRATICAS = [
       {
         texto: 'Repita saindo sempre de {C} e chegando sempre em {Am}.',
         linhas: [{ acordes: ['C', 'F', 'G', 'Am'] }],
-        nota: 'Esse é o caminho preparado na versão forte.'
+        nota: 'Esse é o caminho preparado na versão forte.',
+        video: { inicio: 1568 }
       }
     ],
     criterio: 'A conexão saindo de memória, sem consultar.'
@@ -610,7 +622,8 @@ var MICROPRATICAS = [
         linhas: [
           { rotulo: 'forte', acordes: ['C', 'F', 'G', 'Am'] },
           { rotulo: 'suave', acordes: ['C', 'Dm', 'Em', 'Am'] }
-        ]
+        ],
+        video: { inicio: 1568 }
       }
     ],
     criterio: 'As duas versões de memória, com a escolha feita de ouvido.'
@@ -641,7 +654,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Três voltas, devagar, deixando a mão achar o lugar.',
-        nota: 'Estranhar no começo é normal. Em dó também estranhou.'
+        nota: 'Estranhar no começo é normal. Em dó também estranhou.',
+        video: { inicio: 236 }
       }
     ],
     criterio: 'A progressão inteira no tom novo, sem traduzir mentalmente a partir de dó.'
@@ -677,7 +691,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Três voltas, procurando não fechar a mão direita.',
-        nota: 'Se travar, volte para a tríade fechada por uma volta e abra de novo.'
+        nota: 'Se travar, volte para a tríade fechada por uma volta e abra de novo.',
+        video: { inicio: 2326 }
       }
     ],
     criterio: 'Quatro compassos com a esquerda aberta e a direita solta.'
@@ -707,7 +722,8 @@ var MICROPRATICAS = [
       },
       {
         texto: 'Alterne os dois devagar, segurando cada um.',
-        nota: 'É o acorde de espontâneo, de momento de oração. Grande e parado.'
+        nota: 'É o acorde de espontâneo, de momento de oração. Grande e parado.',
+        video: { inicio: 3244 }
       }
     ],
     criterio: 'Os dois poliacordes deduzidos pela regra, sem consultar tabela.'
