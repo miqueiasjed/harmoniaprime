@@ -190,7 +190,7 @@ var AULAS = [
           { grau: 'IV',  lh: 'F',  rh: 'C', resultado: 'F7M(9)' },
           { grau: 'V',   lh: 'G4', rh: 'F', resultado: 'G4(7/9)' },
           { grau: 'VI',  lh: 'Am', rh: 'G', resultado: 'Am7(9/11)' },
-          { grau: 'VII', lh: 'Bm', rh: 'A', resultado: 'Bm7(9/11)' }
+          { grau: 'VII', lh: 'Bmb5', rh: 'A', resultado: 'Bm7b5(9/11)' }
         ]
       },
 
@@ -277,7 +277,7 @@ var AULAS = [
               'Fecha com <b>I – V – IV</b>, tríade aberta na esquerda e poliacorde na direita.'
             ],
             criterio: 'Os sete graus deduzidos na hora, sem consultar — e o fechamento soando como música, não como exercício.',
-            acordes: ['C', 'Dm', 'Em', 'F', 'G4', 'Am', 'Bm']
+            acordes: ['C', 'Dm', 'Em', 'F', 'G4', 'Am', 'Bmb5']
           }
         ]
       },
