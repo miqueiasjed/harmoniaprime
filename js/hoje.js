@@ -15,6 +15,19 @@
   var palco = null;
   var vista = { nome: 'inicio', passo: 0, pratica: null, feedback: null };
 
+  /* ---------- tom escolhido para a prática atual ----------
+     O conteúdo já nasce transponível (cifras sempre em dó, `tom`
+     transpõe na hora de mostrar). Isso aqui só lembra a escolha do
+     usuário para a prática do momento; muda de prática, o tom volta
+     ao padrão dela. */
+  var tomEscolhido = null;       // { praticaId, tom }
+
+  function tomDaPratica(p) {
+    if (!p) return 'C';
+    if (tomEscolhido && tomEscolhido.praticaId === p.id) return tomEscolhido.tom;
+    return p.tom || 'C';
+  }
+
   function criar(tag, classe, texto, tom) { return HP.criar(tag, classe, texto, tom); }
 
   function botao(classe, texto, aoClicar) {
@@ -160,6 +173,24 @@
     return pratica.progressao || pratica.depois || (chunk && chunk.progressao) || [];
   }
 
+  /** A troca de tom não altera a prática, só como ela é mostrada e tocada. */
+  function seletorTom(pratica, tomAtual) {
+    var cx = criar('div', 'hoje-seletor-tom');
+    cx.appendChild(criar('span', 'hoje-rotulo', 'Tocar em'));
+    var lista = criar('div', 'hoje-tons');
+    global.Musica.TONS.forEach(function (t) {
+      var b = botao('tom' + (t.nome === tomAtual ? ' atual' : ''), t.nome, function () {
+        if (t.nome === tomAtual) return;
+        HP.pararSom();
+        tomEscolhido = { praticaId: pratica.id, tom: t.nome };
+        render();
+      });
+      lista.appendChild(b);
+    });
+    cx.appendChild(lista);
+    return cx;
+  }
+
   /* ---------- tela: início ---------- */
 
   var ETIQUETA = {
@@ -176,7 +207,7 @@
   };
 
   function telaInicio(dados) {
-    var p = dados.pratica, chunk = dados.chunk, tom = p.tom || 'C';
+    var p = dados.pratica, chunk = dados.chunk, tom = tomDaPratica(p);
     var cx = criar('div', 'hoje-cartao');
 
     cx.appendChild(criar('p', 'hoje-saudacao', saudacao()));
@@ -191,6 +222,8 @@
 
     var prog = progressaoDa(p, chunk);
     if (prog.length) cx.appendChild(tira(prog, tom, 'hoje-progressao'));
+
+    cx.appendChild(seletorTom(p, tom));
 
     if (p.aprende) {
       var ap = criar('div', 'hoje-aprende');
@@ -209,8 +242,6 @@
       });
       cx.appendChild(par);
     }
-
-    if (tom !== 'C') cx.appendChild(criar('p', 'hoje-tom', 'no tom de ' + tom));
 
     cx.appendChild(botao('hoje-comecar', 'Começar prática', function () {
       HP.ativarAudio();
@@ -234,7 +265,7 @@
   /* ---------- tela: passos ---------- */
 
   function telaPassos() {
-    var p = vista.pratica, tom = p.tom || 'C';
+    var p = vista.pratica, tom = tomDaPratica(p);
     var passos = p.passos || [];
     var i = Math.min(vista.passo, passos.length - 1);
     var passo = passos[i];
