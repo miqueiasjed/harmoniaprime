@@ -46,13 +46,44 @@ Cinco minutos contam como sessão completa. O aplicativo nunca sugere o contrár
 
 ### Regra de escolha da próxima
 
-Em ordem: reforço do que ficou estranho ontem → reencontro discreto de algo
-antigo (uma a cada quatro sessões) → a próxima da fila curada em
-`conteudo/praticas.js` → a menos praticada, quando o conteúdo novo acabar.
+Em ordem: reforço do que ficou estranho ontem → reencontro de um som vencido →
+a próxima da fila curada em `conteudo/praticas.js` → a menos praticada, quando
+o conteúdo novo acabar.
 
 A ordem do array `MICROPRATICAS` é a fila, e ela segue resultado musical, não a
 ordem teórica da apostila. Uma prática só entra quando o que ela pressupõe
 (`depende`) já foi feito pelo menos uma vez.
+
+### Repetição espaçada
+
+Cada **chunk** (um som, não uma microprática) tem um prazo próprio para voltar.
+Ele começa em 2 dias e muda conforme o "como foi?" da sessão:
+
+| como foi        | o que acontece com o prazo          |
+| --------------- | ----------------------------------- |
+| 🙂 saiu legal   | multiplica por 2,5, com teto de 120 dias |
+| 😐 ainda estranho | fica igual                        |
+| 😣 travei       | volta para 1 dia                    |
+| sem resposta    | fica igual                          |
+
+Na prática, um som que sai legal três vezes seguidas volta em 2, depois 5,
+depois 13, depois 33 dias. O que trava continua batendo na porta. Praticar duas
+vezes no mesmo dia não estica o prazo: repetir agora não prova que daqui a uma
+semana continua na mão.
+
+Vencido o prazo, o som passa na frente do conteúdo novo. O freio é não haver
+dois reencontros seguidos enquanto existir microprática nova liberada, então a
+dívida de revisão nunca trava o avanço.
+
+O prazo é recalculado a partir do log de sessões, sem campo guardado. É o que
+permite juntar dois aparelhos por união de conjuntos sem escolher um lado.
+Nada disso aparece na tela: continua sendo um cartão por vez, sem lista de
+atrasados. Para conferir no console: `Treinador.vocabulario()` mostra estado,
+intervalo e quantos dias faltam para cada som.
+
+Mexeu nos prazos ou na regra de escolha? `node ferramentas/verificar-treinador.js`
+monta históricos falsos e confere a escada, o estado de cada som e quem ganha a
+vez quando existe dívida de revisão.
 
 Tudo fica em `localStorage`, na chave `hp-treinador`. Para começar do zero:
 `Treinador.apagarTudo()` no console.

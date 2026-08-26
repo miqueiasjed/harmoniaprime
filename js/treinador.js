@@ -9,6 +9,10 @@
    Guarda o histórico no navegador, escolhe a próxima microprática
    e trava a escolha. Enquanto a atual não for marcada como
    praticada, ela continua sendo a de hoje. Nada de fila visível.
+
+   O que já saiu legal volta em prazos cada vez mais longos; o que
+   travou volta amanhã. A conta fica aqui dentro: na tela continua
+   sendo uma prática por vez, sem lista de atrasados.
    =========================================================== */
 (function (global) {
   'use strict';
@@ -91,18 +95,58 @@
     return p.depende.every(function (id) { return vezes(id) > 0; });
   }
 
+  /* ---------- repetição espaçada ---------- */
+
+  var PRIMEIRO = 2;        // dias até o primeiro reencontro
+  var CRESCIMENTO = 2.5;   // quanto o prazo estica a cada "saiu legal"
+  var TETO = 120;          // acima disso o som já é seu; esperar mais não ensina nada
+
+  function chunkDaSessao(s) {
+    if (s.chunkId) return s.chunkId;
+    var p = pratica(s.praticaId);
+    return p ? p.chunkId : null;
+  }
+
+  /**
+   * O prazo de um chunk sai do log de sessões, nunca de um campo guardado.
+   * É o que mantém a junção entre dois aparelhos sendo união de conjuntos:
+   * quem praticou nos dois refaz a escada do zero e chega no mesmo lugar.
+   *
+   * A escada: "saiu legal" estica o prazo, "ainda estranho" o congela e
+   * "travei" devolve o som para amanhã. Praticar duas vezes no mesmo dia não
+   * estica nada, porque repetir agora não prova que daqui a uma semana
+   * continua na mão.
+   *
+   * Devolve null enquanto o chunk nunca foi praticado.
+   */
+  function escadaDoChunk(id) {
+    var intervalo = 0, ultima = null, anterior = null;
+    ler().sessoes.forEach(function (s) {
+      if (!s.praticou || chunkDaSessao(s) !== id) return;
+      var mesmoDia = anterior && dia(new Date(s.data)) === dia(new Date(anterior));
+      if (!intervalo) intervalo = PRIMEIRO;
+      else if (s.feedback === 'travei') intervalo = 1;
+      else if (s.feedback === 'legal' && !mesmoDia) intervalo = Math.min(Math.round(intervalo * CRESCIMENTO), TETO);
+      anterior = s.data;
+      ultima = s.data;
+    });
+    if (!intervalo) return null;
+    // atraso ≥ 0 quer dizer vencido; quanto maior, mais tempo o som está largado
+    return { intervalo: intervalo, ultima: ultima, atraso: diasEntre(ultima) - intervalo };
+  }
+
   /**
    * Estado interno do chunk. O usuário nunca gerencia isto; serve para o
    * treinador saber o que ainda precisa voltar e o que já está na mão.
    * novo · praticando · praticado · revisar · automatico
    */
   function estadoDoChunk(id) {
-    var r = ler().chunks[id];
-    if (!r || !r.vezes) return 'novo';
-    var faz = diasEntre(r.ultima);
-    if (r.vezes >= 4 && r.feedback === 'legal') return faz > 21 ? 'revisar' : 'automatico';
-    if (r.vezes >= 3) return faz > 10 ? 'revisar' : 'praticado';
-    return faz > 7 ? 'revisar' : 'praticando';
+    var e = escadaDoChunk(id);
+    if (!e) return 'novo';
+    if (e.atraso >= 0) return 'revisar';
+    if (e.intervalo >= 30) return 'automatico';
+    if (e.intervalo >= 7) return 'praticado';
+    return 'praticando';
   }
 
   /* ---------- escolha da próxima ---------- */
@@ -110,6 +154,12 @@
   function ultimaSessao() {
     var s = ler().sessoes;
     return s.length ? s[s.length - 1] : null;
+  }
+
+  function ultimaPraticada() {
+    var s = ler().sessoes;
+    for (var i = s.length - 1; i >= 0; i--) if (s[i].praticou) return s[i];
+    return null;
   }
 
   /**
@@ -128,19 +178,22 @@
     return nova || null;
   }
 
-  /** Um chunk antigo que merece reencontro, sem alarde e sem lista. */
+  /** O chunk vencido que mais precisa voltar, sem alarde e sem lista. */
   function paraRevisar(evitarChunk) {
-    var candidatos = CHUNKS.filter(function (c) {
-      if (c.id === evitarChunk) return false;
-      return estadoDoChunk(c.id) === 'revisar';
+    var candidatos = [];
+    CHUNKS.forEach(function (c) {
+      if (c.id === evitarChunk) return;
+      var e = escadaDoChunk(c.id);
+      if (e && e.atraso >= 0) candidatos.push({ chunk: c, escada: e });
     });
     if (!candidatos.length) return null;
     var st = ler();
+    // o mais vencido primeiro; empatou, o de prazo mais curto, que é o mais frágil
     candidatos.sort(function (a, b) {
-      var ra = st.chunks[a.id] || {}, rb = st.chunks[b.id] || {};
-      return new Date(ra.ultima || 0) - new Date(rb.ultima || 0);
+      if (b.escada.atraso !== a.escada.atraso) return b.escada.atraso - a.escada.atraso;
+      return a.escada.intervalo - b.escada.intervalo;
     });
-    var alvo = candidatos[0];
+    var alvo = candidatos[0].chunk;
     var doChunk = PRATICAS.filter(function (p) { return p.chunkId === alvo.id && vezes(p.id) > 0; });
     doChunk.sort(function (a, b) {
       var ra = st.praticas[a.id] || {}, rb = st.praticas[b.id] || {};
@@ -179,14 +232,18 @@
       if (r) return { id: r.id, motivo: r.id === ult.praticaId ? 'repetir' : 'reforco' };
     }
 
-    // reencontro discreto: uma a cada quatro sessões, quando houver o que rever
-    var feitas = st.sessoes.filter(function (s) { return s.praticou; }).length;
-    if (feitas > 0 && feitas % 4 === 0) {
-      var rev = paraRevisar(ult && ult.chunkId);
-      if (rev) return { id: rev.id, motivo: 'revisao' };
+    var nova = proximaNova();
+
+    // dívida de revisão: som vencido passa na frente do conteúdo novo, com um
+    // freio para o avanço não parar, nunca dois reencontros seguidos enquanto
+    // houver som novo esperando
+    var rev = paraRevisar(ult && ult.chunkId);
+    if (rev) {
+      var anterior = ultimaPraticada();
+      var seguidas = anterior && anterior.motivo === 'revisao';
+      if (!seguidas || !nova) return { id: rev.id, motivo: 'revisao' };
     }
 
-    var nova = proximaNova();
     if (nova) return { id: nova.id, motivo: 'nova' };
 
     var qualquer = menosPraticada();
@@ -232,12 +289,17 @@
     var p = pratica(praticaId);
     if (!p) return;
 
+    // o motivo entra na sessão: é assim que a escolha de amanhã sabe que a de
+    // hoje já foi um reencontro, sem guardar estado à parte do log
+    var motivo = (st.atual && st.atual.id === praticaId) ? st.atual.motivo : null;
+
     st.sessoes.push({
       praticaId: praticaId,
       chunkId: p.chunkId,
       data: new Date().toISOString(),
       duracaoPlanejada: p.duracao || 5,
       praticou: !!praticou,
+      motivo: motivo,
       feedback: feedback || null
     });
     if (st.sessoes.length > 400) st.sessoes = st.sessoes.slice(-400);
@@ -316,11 +378,14 @@
   function vocabulario() {
     return CHUNKS.map(function (c) {
       var r = ler().chunks[c.id] || {};
+      var e = escadaDoChunk(c.id);
       return {
         chunk: c,
         estado: estadoDoChunk(c.id),
         vezes: r.vezes || 0,
-        ultima: r.ultima || null
+        ultima: r.ultima || null,
+        intervalo: e ? e.intervalo : 0,
+        volta: e ? Math.max(0, -e.atraso) : null   // dias até o próximo reencontro
       };
     });
   }
@@ -398,6 +463,7 @@
       if (vistas[k]) {
         // a mesma sessão nos dois lados: o feedback anotado depois prevalece
         if (!vistas[k].feedback && s.feedback) vistas[k].feedback = s.feedback;
+        if (!vistas[k].motivo && s.motivo) vistas[k].motivo = s.motivo;
         return;
       }
       vistas[k] = s;
@@ -441,6 +507,7 @@
     vocabulario: vocabulario,
     historico: historico,
     estadoDoChunk: estadoDoChunk,
+    escadaDoChunk: escadaDoChunk,
     pratica: pratica,
     chunk: chunk,
     apagarTudo: apagarTudo,
